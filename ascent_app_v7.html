@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ascent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --bg: #f8fafc;
+            --bg2: #f1f5f9;
+            --bg3: #e2e8f0;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text2: #475569;
+            --text3: #94a3b8;
+            --accent: #3b82f6;
+            --accent-light: #dbeafe;
+            --success: #22c55e;
+            --success-light: #dcfce7;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --purple: #8b5cf6;
+            --purple-light: #ede9fe;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+        }
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+        
+        .screen { position: fixed; inset: 0; display: none; flex-direction: column; overflow: hidden; background: var(--bg); }
+        .screen.active { display: flex; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        @keyframes checkPop { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; border: none; border-radius: var(--radius); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-dark { background: var(--text); color: #fff; }
+        .btn-light { background: var(--bg2); color: var(--text); }
+        .btn-ghost { background: transparent; color: var(--text3); }
+        .btn-sm { padding: 10px 16px; font-size: 13px; }
+        .btn-full { width: 100%; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .input { width: 100%; padding: 14px 16px; background: var(--card); border: 1px solid var(--bg3); border-radius: var(--radius); font-family: inherit; font-size: 15px; color: var(--text); transition: all 0.2s; }
+        .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+        .input::placeholder { color: var(--text3); }
+        .textarea { min-height: 120px; resize: none; line-height: 1.6; }
+        
+        /* Splash */
+        #splash { background: linear-gradient(135deg, #3b82f6, #8b5cf6); justify-content: center; align-items: center; color: #fff; animation: fadeIn 0.3s; }
+        .splash-icon { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .splash-icon svg { width: 40px; height: 40px; }
+        .splash-title { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+        .splash-sub { font-size: 16px; opacity: 0.9; }
+        
+        /* Setup screens */
+        .setup { flex: 1; display: flex; flex-direction: column; }
+        .setup-header { padding: 20px 24px; padding-top: max(60px, env(safe-area-inset-top)); }
+        .setup-back { display: flex; align-items: center; gap: 4px; font-size: 15px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 20px; }
+        .setup-back svg { width: 18px; height: 18px; }
+        .setup-progress { display: flex; gap: 6px; margin-bottom: 24px; }
+        .setup-progress-bar { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+        .setup-progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+        .setup-title { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+        .setup-subtitle { font-size: 15px; color: var(--text2); line-height: 1.6; }
+        .setup-content { flex: 1; overflow-y: auto; padding: 0 24px 24px; -webkit-overflow-scrolling: touch; }
+        .setup-footer { padding: 16px 24px; padding-bottom: max(24px, env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--bg3); }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .form-hint { font-size: 13px; color: var(--text3); margin-top: 8px; line-height: 1.5; }
+        
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { padding: 10px 16px; background: var(--bg2); border: 2px solid transparent; border-radius: var(--radius); font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+        .chip.selected { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+        
+        .time-chips { display: flex; gap: 8px; }
+        .time-chip { flex: 1; padding: 16px 12px; background: var(--bg2); border: 2px solid transparent; border-radius: var(--radius); text-align: center; cursor: pointer; transition: all 0.2s; }
+        .time-chip.selected { background: var(--accent-light); border-color: var(--accent); }
+        .time-chip-icon { margin-bottom: 6px; }
+        .time-chip-icon svg { width: 24px; height: 24px; stroke: var(--text3); }
+        .time-chip.selected .time-chip-icon svg { stroke: var(--accent); }
+        .time-chip-label { font-size: 12px; font-weight: 600; color: var(--text2); }
+        .time-chip.selected .time-chip-label { color: var(--accent); }
+        
+        /* Loading state */
+        .loading-card { background: var(--card); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; box-shadow: var(--shadow); }
+        .loading-spinner { width: 48px; height: 48px; border: 3px solid var(--bg3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+        .loading-text { font-size: 15px; color: var(--text2); }
+        .loading-subtext { font-size: 13px; color: var(--text3); margin-top: 4px; }
+        
+        .skeleton { background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius); }
+        
+        /* Curriculum display */
+        .curriculum-card { background: var(--card); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; animation: slideUp 0.4s ease; }
+        .curriculum-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .curriculum-icon { width: 44px; height: 44px; background: var(--accent-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .curriculum-icon svg { width: 22px; height: 22px; stroke: var(--accent); }
+        .curriculum-title { font-size: 18px; font-weight: 700; }
+        .curriculum-meta { font-size: 13px; color: var(--text3); margin-top: 2px; }
+        
+        .phase { margin-bottom: 16px; }
+        .phase:last-child { margin-bottom: 0; }
+        .phase-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .phase-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .phase-name { font-size: 14px; font-weight: 700; color: var(--accent); }
+        .phase-weeks { padding-left: 16px; border-left: 2px solid var(--bg3); }
+        .week-item { padding: 10px 0 10px 12px; border-bottom: 1px solid var(--bg2); }
+        .week-item:last-child { border-bottom: none; }
+        .week-num { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; margin-bottom: 2px; }
+        .week-milestone { font-size: 14px; color: var(--text); line-height: 1.4; }
+        
+        /* App main */
+        .app { display: flex; flex-direction: column; height: 100%; }
+        .app-header { padding: 16px 20px; padding-top: max(52px, env(safe-area-inset-top)); background: var(--card); border-bottom: 1px solid var(--bg3); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; }
+        .header-greeting { font-size: 13px; color: var(--text3); font-weight: 500; }
+        .header-date { font-size: 20px; font-weight: 700; margin-top: 2px; }
+        .header-avatar { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--purple)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 16px; }
+        
+        .app-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
+        
+        /* Goal banner */
+        .goal-banner { background: linear-gradient(135deg, var(--accent), var(--purple)); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; color: #fff; }
+        .goal-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .goal-label svg { width: 14px; height: 14px; }
+        .goal-text { font-size: 16px; font-weight: 500; line-height: 1.5; margin-bottom: 16px; }
+        .goal-progress { height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; overflow: hidden; }
+        .goal-progress-fill { height: 100%; background: #fff; border-radius: 3px; }
+        .goal-progress-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; opacity: 0.9; }
+        
+        /* Week info card */
+        .week-info { background: var(--card); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
+        .week-info-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .week-info-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+        .week-info-num { font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-light); padding: 4px 10px; border-radius: 20px; }
+        .week-milestone-text { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.5; }
+        .week-progress { display: flex; gap: 6px; margin-top: 12px; }
+        .week-progress-day { flex: 1; height: 6px; background: var(--bg2); border-radius: 3px; }
+        .week-progress-day.done { background: var(--success); }
+        .week-progress-day.today { background: var(--accent); }
+        
+        /* Quote card */
+        .quote-card { background: var(--purple-light); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; }
+        .quote-icon { width: 28px; height: 28px; background: var(--card); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .quote-icon svg { width: 14px; height: 14px; stroke: var(--purple); }
+        .quote-text { font-size: 14px; font-style: italic; color: var(--text); line-height: 1.6; margin-bottom: 6px; }
+        .quote-author { font-size: 12px; color: var(--text2); font-weight: 600; }
+        
+        /* Stats row */
+        .stats-row { display: flex; gap: 12px; margin-bottom: 20px; }
+        .stat-card { flex: 1; background: var(--card); border-radius: var(--radius); padding: 14px; text-align: center; box-shadow: var(--shadow); }
+        .stat-value { font-size: 22px; font-weight: 800; color: var(--warning); }
+        .stat-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+        
+        /* Section header */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .section-title { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+        .section-action { font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; }
+        
+        /* Task card */
+        .task-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+        .task-card.completed { opacity: 0.6; }
+        .task-header { display: flex; align-items: flex-start; gap: 12px; }
+        .task-check { width: 26px; height: 26px; border: 2px solid var(--bg3); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .task-check:hover { border-color: var(--success); }
+        .task-check.done { background: var(--success); border-color: var(--success); }
+        .task-check svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 3; opacity: 0; }
+        .task-check.done svg { opacity: 1; animation: checkPop 0.3s; }
+        .task-content { flex: 1; }
+        .task-text { font-size: 15px; font-weight: 500; color: var(--text); line-height: 1.4; }
+        .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--text3); }
+        .task-tag { padding: 2px 8px; background: var(--bg2); border-radius: 4px; font-weight: 600; }
+        .task-tag.ai { background: var(--purple-light); color: var(--purple); }
+        .task-tag.habit { background: var(--success-light); color: var(--success); }
+        
+        /* Task actions */
+        .task-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bg2); }
+        .task-btn { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--bg2); border: none; border-radius: var(--radius); font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+        .task-btn:hover { background: var(--bg3); }
+        .task-btn.primary { background: var(--accent); color: #fff; }
+        .task-btn.cant-start { background: var(--warning-light); color: var(--warning); }
+        .task-btn svg { width: 14px; height: 14px; }
+        
+        /* 2-min popup */
+        .two-min-popup { background: var(--warning-light); border: 2px solid var(--warning); border-radius: var(--radius); padding: 14px; margin-top: 12px; animation: slideUp 0.3s; }
+        .two-min-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .two-min-badge { font-size: 11px; font-weight: 700; color: var(--warning); text-transform: uppercase; }
+        .two-min-text { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+        .two-min-why { font-size: 12px; color: var(--text2); margin-top: 6px; font-style: italic; }
+        .two-min-actions { display: flex; gap: 8px; margin-top: 10px; }
+        
+        /* Habit card */
+        .habit-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+        .habit-card.completed { opacity: 0.6; }
+        .habit-row { display: flex; align-items: center; gap: 12px; }
+        .habit-check { width: 24px; height: 24px; border: 2px solid var(--bg3); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .habit-check.done { background: var(--success); border-color: var(--success); }
+        .habit-check svg { width: 12px; height: 12px; stroke: #fff; stroke-width: 3; opacity: 0; }
+        .habit-check.done svg { opacity: 1; }
+        .habit-info { flex: 1; }
+        .habit-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .habit-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+        .habit-streak { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--warning); }
+        .habit-streak svg { width: 14px; height: 14px; }
+        .habit-2min { padding: 6px 10px; background: var(--warning-light); border: none; border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--warning); cursor: pointer; }
+        
+        /* Add button */
+        .add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: transparent; border: 2px dashed var(--bg3); border-radius: var(--radius); color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; transition: all 0.2s; }
+        .add-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+        .add-btn svg { width: 16px; height: 16px; }
+        
+        /* Tab bar */
+        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--bg3); padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom)); display: flex; justify-content: space-around; z-index: 100; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 16px; background: none; border: none; cursor: pointer; color: var(--text3); transition: color 0.2s; }
+        .tab-item.active { color: var(--accent); }
+        .tab-item svg { width: 22px; height: 22px; }
+        .tab-label { font-size: 11px; font-weight: 500; }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: flex-end; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--card); border-radius: var(--radius-xl) var(--radius-xl) 0 0; width: 100%; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s; }
+        .modal-handle { width: 36px; height: 4px; background: var(--bg3); border-radius: 2px; margin: 10px auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px 16px; }
+        .modal-title { font-size: 17px; font-weight: 700; }
+        .modal-close { width: 32px; height: 32px; background: var(--bg2); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .modal-close svg { width: 16px; height: 16px; stroke: var(--text3); }
+        .modal-body { padding: 0 20px 20px; }
+        .modal-footer { padding: 12px 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); border-top: 1px solid var(--bg3); }
+        
+        /* Celebration */
+        .celebration { position: fixed; inset: 0; background: linear-gradient(135deg, var(--success), #16a34a); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+        .celebration.active { display: flex; animation: fadeIn 0.3s; }
+        .celebration-icon { width: 80px; height: 80px; border: 3px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .celebration-icon svg { width: 40px; height: 40px; }
+        .celebration-title { font-size: 28px; font-weight: 800; }
+        .celebration-sub { font-size: 16px; opacity: 0.9; margin-top: 4px; }
+        
+        /* Weekly Plan Screen */
+        .plan-card { background: var(--card); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+        .plan-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .plan-icon { width: 40px; height: 40px; background: var(--accent-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .plan-icon svg { width: 20px; height: 20px; stroke: var(--accent); }
+        .plan-title { font-size: 16px; font-weight: 700; }
+        .plan-meta { font-size: 13px; color: var(--text3); margin-top: 2px; }
+        
+        .day-task { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--bg2); }
+        .day-task:last-child { border-bottom: none; padding-bottom: 0; }
+        .day-num { width: 32px; height: 32px; background: var(--bg2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--text3); flex-shrink: 0; }
+        .day-num.today { background: var(--accent); color: #fff; }
+        .day-num.done { background: var(--success); color: #fff; }
+        .day-content { flex: 1; }
+        .day-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; margin-bottom: 2px; }
+        .day-text { font-size: 14px; color: var(--text); line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script>
+    // Icons
+    const Icons = {
+        mountain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3l4 8 5-5 5 14H2L8 3z"/></svg>',
+        target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+        check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
+        plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+        x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+        chevronLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>',
+        chevronRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
+        clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>',
+        brain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 014 4v1a3 3 0 013 3 3 3 0 01-1 2.24 4 4 0 01.5 1.76 4 4 0 01-4 4h-1v2a2 2 0 01-2 2 2 2 0 01-2-2v-2h-1a4 4 0 01-4-4 4 4 0 01.5-1.76A3 3 0 014 10a3 3 0 013-3V6a4 4 0 014-4z"/></svg>',
+        sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3zM5 16l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/></svg>',
+        user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
+        calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+        list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+        zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        sunrise: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18a5 5 0 00-10 0M12 9V2M4.22 10.22l1.42 1.42M1 18h2M21 18h2M18.36 11.64l1.42-1.42M23 22H1M16 5l-4 4-4-4"/></svg>',
+        sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+        moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>',
+        quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>',
+        award: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>'
+    };
+    
+    // Mock AI responses
+    const MockAI = {
+        curriculum: {
+            "Learn Spanish": {
+                title: "Conversational Spanish in 8 Weeks",
+                totalWeeks: 8,
+                phases: [
+                    { name: "Foundation", weeks: [
+                        { week: 1, milestone: "Learn 100 most common words and basic pronunciation." },
+                        { week: 2, milestone: "Master present tense conjugation for 20 essential verbs." }
+                    ]},
+                    { name: "Basic Conversation", weeks: [
+                        { week: 3, milestone: "Hold a 2-minute self-introduction conversation." },
+                        { week: 4, milestone: "Order food and ask for directions confidently." }
+                    ]},
+                    { name: "Practical Fluency", weeks: [
+                        { week: 5, milestone: "Understand and respond to 5 minutes of native audio." },
+                        { week: 6, milestone: "Have a 10-minute conversation about daily routines." }
+                    ]},
+                    { name: "Confidence Building", weeks: [
+                        { week: 7, milestone: "Complete a 15-minute conversation with a native speaker." },
+                        { week: 8, milestone: "Tell a story about a past experience using past tense." }
+                    ]}
+                ]
+            },
+            default: {
+                title: "Your 8-Week Journey",
+                totalWeeks: 8,
+                phases: [
+                    { name: "Foundation", weeks: [
+                        { week: 1, milestone: "Learn the fundamental concepts and set up your environment." },
+                        { week: 2, milestone: "Practice basic skills for 20 minutes daily." }
+                    ]},
+                    { name: "Building Skills", weeks: [
+                        { week: 3, milestone: "Complete your first small project or milestone." },
+                        { week: 4, milestone: "Identify and fix gaps in your understanding." }
+                    ]},
+                    { name: "Application", weeks: [
+                        { week: 5, milestone: "Apply skills to a real-world scenario." },
+                        { week: 6, milestone: "Get feedback and iterate on your work." }
+                    ]},
+                    { name: "Mastery", weeks: [
+                        { week: 7, milestone: "Take on a challenging project independently." },
+                        { week: 8, milestone: "Demonstrate your skills to others." }
+                    ]}
+                ]
+            }
+        },
+        
+        dailyTasks: {
+            default: [
+                { day: 1, task: "Review yesterday's material and set today's focus." },
+                { day: 2, task: "Practice core skills for 30 minutes with full attention." },
+                { day: 3, task: "Apply what you learned to a small challenge." },
+                { day: 4, task: "Review weak areas and practice them specifically." },
+                { day: 5, task: "Complete a mini-project using this week's skills." }
+            ]
+        },
+        
+        twoMinute: {
+            "Learn 25 new vocabulary words using flashcard app.": {
+                twoMinuteVersion: "Open Duolingo and complete exactly one lesson.",
+                whyThisWorks: "The hardest part is starting; one lesson often becomes three."
+            },
+            "Practice core skills for 30 minutes with full attention.": {
+                twoMinuteVersion: "Set a timer for 2 minutes and practice one thing.",
+                whyThisWorks: "Starting is the only hard part; momentum takes over."
+            },
+            default: {
+                twoMinuteVersion: "Open the app/tool and do the smallest possible action.",
+                whyThisWorks: "Showing up matters more than duration for habit formation."
+            }
+        }
+    };
+    
+    // Quotes
+    const QUOTES = [
+        { text: "We are what we repeatedly do. Excellence is not an act, but a habit.", author: "Aristotle" },
+        { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+        { text: "Small daily improvements lead to stunning results.", author: "Robin Sharma" },
+        { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+        { text: "Motivation gets you started. Habit keeps you going.", author: "Jim Ryun" },
+        { text: "You'll never change your life until you change something you do daily.", author: "John Maxwell" },
+        { text: "First we make our habits, then our habits make us.", author: "John Dryden" },
+        { text: "Habits are the compound interest of self-improvement.", author: "James Clear" },
+        { text: "Every action is a vote for the person you wish to become.", author: "James Clear" },
+        { text: "It doesn't matter how slowly you go, as long as you don't stop.", author: "Confucius" },
+        { text: "A journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
+        { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+        { text: "Discipline is choosing what you want most over what you want now.", author: "Abraham Lincoln" },
+        { text: "The habit of persistence is the habit of victory.", author: "Herbert Kaufman" },
+        { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" }
+    ];
+    
+    // App State
+    const App = {
+        state: {
+            screen: 'splash',
+            setupStep: 0,
+            activeTab: 'today',
+            showAddHabit: false,
+            generating: false,
+            twoMinOpen: {}
+        },
+        
+        data: {
+            name: '',
+            goal: '',
+            goalContext: '',
+            currentLevel: 'beginner',
+            weeksAvailable: 8,
+            curriculum: null,
+            currentWeek: 1,
+            dailyTasks: [],
+            habits: [],
+            completions: [],
+            taskCompletions: [],
+            streakDays: 0
+        },
+        
+        init() {
+            this.loadData();
+            this.render();
+            if (this.state.screen === 'splash') {
+                setTimeout(() => {
+                    this.state.screen = this.data.curriculum ? 'app' : 'setup-goal';
+                    this.render();
+                }, 1500);
+            }
+        },
+        
+        loadData() {
+            const saved = localStorage.getItem('ascent_v7');
+            if (saved) {
+                this.data = { ...this.data, ...JSON.parse(saved) };
+            }
+        },
+        
+        saveData() {
+            localStorage.setItem('ascent_v7', JSON.stringify(this.data));
+        },
+        
+        render() {
+            document.getElementById('app').innerHTML = this.getScreen();
+            this.attachEvents();
+        },
+        
+        getScreen() {
+            switch(this.state.screen) {
+                case 'splash': return this.splashScreen();
+                case 'setup-goal': return this.setupGoalScreen();
+                case 'setup-context': return this.setupContextScreen();
+                case 'setup-curriculum': return this.setupCurriculumScreen();
+                case 'setup-habits': return this.setupHabitsScreen();
+                case 'weekly-plan': return this.weeklyPlanScreen();
+                case 'app': return this.appScreen();
+                default: return this.splashScreen();
+            }
+        },
+        
+        splashScreen() {
+            return `<div class="screen active" id="splash">
+                <div class="splash-icon">${Icons.mountain}</div>
+                <div class="splash-title">Ascent</div>
+                <div class="splash-sub">Structure your goals</div>
+            </div>`;
+        },
+        
+        setupGoalScreen() {
+            return `<div class="screen active">
+                <div class="setup">
+                    <div class="setup-header">
+                        <div class="setup-progress">
+                            <div class="setup-progress-bar"><div class="setup-progress-fill" style="width: 25%"></div></div>
+                        </div>
+                        <h1 class="setup-title">What do you want to achieve?</h1>
+                        <p class="setup-subtitle">Not a habit—a destination. Write 1-3 sentences that inspire you. You'll see this every time you open the app.</p>
+                    </div>
+                    <div class="setup-content">
+                        <div class="form-group">
+                            <label class="form-label">Your Goal</label>
+                            <textarea class="input textarea" id="goal-input" placeholder="e.g., Become conversational in Spanish so I can travel confidently through South America.">${this.data.goal}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Your Current Level</label>
+                            <div class="chip-group">
+                                <div class="chip ${this.data.currentLevel === 'beginner' ? 'selected' : ''}" data-level="beginner">Beginner</div>
+                                <div class="chip ${this.data.currentLevel === 'intermediate' ? 'selected' : ''}" data-level="intermediate">Intermediate</div>
+                                <div class="chip ${this.data.currentLevel === 'advanced' ? 'selected' : ''}" data-level="advanced">Advanced</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Timeframe</label>
+                            <div class="chip-group">
+                                <div class="chip ${this.data.weeksAvailable === 4 ? 'selected' : ''}" data-weeks="4">4 weeks</div>
+                                <div class="chip ${this.data.weeksAvailable === 8 ? 'selected' : ''}" data-weeks="8">8 weeks</div>
+                                <div class="chip ${this.data.weeksAvailable === 12 ? 'selected' : ''}" data-weeks="12">12 weeks</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setup-footer">
+                        <button class="btn btn-primary btn-full" id="goal-next">Continue</button>
+                    </div>
+                </div>
+            </div>`;
+        },
+        
+        setupContextScreen() {
+            return `<div class="screen active">
+                <div class="setup">
+                    <div class="setup-header">
+                        <button class="setup-back" id="context-back">${Icons.chevronLeft} Back</button>
+                        <div class="setup-progress">
+                            <div class="setup-progress-bar"><div class="setup-progress-fill" style="width: 50%"></div></div>
+                        </div>
+                        <h1 class="setup-title">Any relevant context?</h1>
+                        <p class="setup-subtitle">This helps generate a more personalized curriculum.</p>
+                    </div>
+                    <div class="setup-content">
+                        <div class="form-group">
+                            <label class="form-label">Context (Optional)</label>
+                            <textarea class="input textarea" id="context-input" placeholder="e.g., I have 30 minutes in the morning before work. I tried Duolingo before but stopped after a month.">${this.data.goalContext}</textarea>
+                            <p class="form-hint">Any constraints, past experience, or preferences that might help.</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Best Time to Work on This</label>
+                            <div class="time-chips">
+                                <div class="time-chip selected" data-time="morning">
+                                    <div class="time-chip-icon">${Icons.sunrise}</div>
+                                    <div class="time-chip-label">Morning</div>
+                                </div>
+                                <div class="time-chip" data-time="afternoon">
+                                    <div class="time-chip-icon">${Icons.sun}</div>
+                                    <div class="time-chip-label">Afternoon</div>
+                                </div>
+                                <div class="time-chip" data-time="evening">
+                                    <div class="time-chip-icon">${Icons.moon}</div>
+                                    <div class="time-chip-label">Evening</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setup-footer">
+                        <button class="btn btn-primary btn-full" id="context-next">Generate Curriculum</button>
+                    </div>
+                </div>
+            </div>`;
+        },
+        
+        setupCurriculumScreen() {
+            const curriculum = this.data.curriculum;
+            
+            return `<div class="screen active">
+                <div class="setup">
+                    <div class="setup-header">
+                        <button class="setup-back" id="curriculum-back">${Icons.chevronLeft} Back</button>
+                        <div class="setup-progress">
+                            <div class="setup-progress-bar"><div class="setup-progress-fill" style="width: 75%"></div></div>
+                        </div>
+                        <h1 class="setup-title">${this.state.generating ? 'Building your curriculum...' : 'Your Curriculum'}</h1>
+                        <p class="setup-subtitle">${this.state.generating ? 'AI is creating a structured plan based on your goal.' : 'Review your AI-generated learning path.'}</p>
+                    </div>
+                    <div class="setup-content">
+                        ${this.state.generating ? `
+                            <div class="loading-card">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">Generating curriculum...</div>
+                                <div class="loading-subtext">This takes a few seconds</div>
+                            </div>
+                        ` : curriculum ? `
+                            <div class="curriculum-card">
+                                <div class="curriculum-header">
+                                    <div class="curriculum-icon">${Icons.award}</div>
+                                    <div>
+                                        <div class="curriculum-title">${curriculum.title}</div>
+                                        <div class="curriculum-meta">${curriculum.totalWeeks} weeks · ${curriculum.phases.length} phases</div>
+                                    </div>
+                                </div>
+                                ${curriculum.phases.map(phase => `
+                                    <div class="phase">
+                                        <div class="phase-header">
+                                            <div class="phase-dot"></div>
+                                            <div class="phase-name">${phase.name}</div>
+                                        </div>
+                                        <div class="phase-weeks">
+                                            ${phase.weeks.map(week => `
+                                                <div class="week-item">
+                                                    <div class="week-num">Week ${week.week}</div>
+                                                    <div class="week-milestone">${week.milestone}</div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="setup-footer">
+                        <button class="btn btn-primary btn-full" id="curriculum-next" ${this.state.generating ? 'disabled' : ''}>
+                            ${this.state.generating ? 'Generating...' : 'Continue'}
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        },
+        
+        setupHabitsScreen() {
+            const habits = this.data.habits;
+            
+            return `<div class="screen active">
+                <div class="setup">
+                    <div class="setup-header">
+                        <button class="setup-back" id="habits-back">${Icons.chevronLeft} Back</button>
+                        <div class="setup-progress">
+                            <div class="setup-progress-bar"><div class="setup-progress-fill" style="width: 100%"></div></div>
+                        </div>
+                        <h1 class="setup-title">Add daily habits</h1>
+                        <p class="setup-subtitle">These are recurring actions that support your goal. Your AI tasks will appear alongside these.</p>
+                    </div>
+                    <div class="setup-content">
+                        ${habits.map((h, i) => `
+                            <div class="habit-card">
+                                <div class="habit-row">
+                                    <div class="habit-info">
+                                        <div class="habit-name">${h.name}</div>
+                                        <div class="habit-meta">${h.goalAmount} ${h.unit} · ${h.timeOfDay}</div>
+                                    </div>
+                                    <button class="modal-close" data-remove-habit="${i}">${Icons.x}</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                        
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label class="form-label">Add a Habit</label>
+                            <input type="text" class="input" id="habit-name-input" placeholder="e.g., Practice Spanish, Exercise, Read">
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Amount</label>
+                                <input type="number" class="input" id="habit-amount-input" value="30">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Unit</label>
+                                <select class="input" id="habit-unit-input">
+                                    <option value="minutes">minutes</option>
+                                    <option value="count">times</option>
+                                    <option value="pages">pages</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-light btn-full" id="add-habit-btn" style="margin-top: 8px;">${Icons.plus} Add Habit</button>
+                    </div>
+                    <div class="setup-footer">
+                        <button class="btn btn-primary btn-full" id="habits-done">Start My Journey</button>
+                    </div>
+                </div>
+            </div>`;
+        },
+        
+        weeklyPlanScreen() {
+            const curriculum = this.data.curriculum;
+            const currentWeek = this.data.currentWeek;
+            let weekMilestone = "Complete this week's tasks";
+            
+            if (curriculum) {
+                for (const phase of curriculum.phases) {
+                    const week = phase.weeks.find(w => w.week === currentWeek);
+                    if (week) {
+                        weekMilestone = week.milestone;
+                        break;
+                    }
+                }
+            }
+            
+            const tasks = this.data.dailyTasks;
+            const today = new Date().getDay();
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            return `<div class="screen active">
+                <div class="setup">
+                    <div class="setup-header">
+                        <button class="setup-back" id="plan-back">${Icons.chevronLeft} Back</button>
+                        <h1 class="setup-title">Week ${currentWeek} Plan</h1>
+                        <p class="setup-subtitle">${weekMilestone}</p>
+                    </div>
+                    <div class="setup-content">
+                        ${this.state.generating ? `
+                            <div class="loading-card">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">Breaking down your week...</div>
+                            </div>
+                        ` : `
+                            <div class="plan-card">
+                                <div class="plan-header">
+                                    <div class="plan-icon">${Icons.calendar}</div>
+                                    <div>
+                                        <div class="plan-title">Daily Tasks</div>
+                                        <div class="plan-meta">${tasks.length} tasks this week</div>
+                                    </div>
+                                </div>
+                                ${tasks.map((t, i) => {
+                                    const dayIndex = (i + 1) % 7;
+                                    const isToday = dayIndex === today;
+                                    const isDone = this.data.taskCompletions.includes(`week${currentWeek}-day${t.day}`);
+                                    return `
+                                        <div class="day-task">
+                                            <div class="day-num ${isToday ? 'today' : ''} ${isDone ? 'done' : ''}">${t.day}</div>
+                                            <div class="day-content">
+                                                <div class="day-label">${dayNames[dayIndex] || 'Day ' + t.day}</div>
+                                                <div class="day-text">${t.task}</div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        `}
+                    </div>
+                    <div class="setup-footer">
+                        <button class="btn btn-primary btn-full" id="plan-done" ${this.state.generating ? 'disabled' : ''}>Go to Today</button>
+                    </div>
+                </div>
+            </div>`;
+        },
+        
+        appScreen() {
+            const tab = this.state.activeTab;
+            let content = '';
+            switch(tab) {
+                case 'today': content = this.todayTab(); break;
+                case 'plan': content = this.planTab(); break;
+                case 'profile': content = this.profileTab(); break;
+            }
+            
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+            const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            const initial = (this.data.name || 'U')[0].toUpperCase();
+            
+            return `<div class="screen active">
+                <div class="app">
+                    <div class="app-header">
+                        <div class="header-row">
+                            <div>
+                                <div class="header-greeting">${greeting}</div>
+                                <div class="header-date">${dateStr}</div>
+                            </div>
+                            <div class="header-avatar">${initial}</div>
+                        </div>
+                    </div>
+                    <div class="app-content">${content}</div>
+                    <div class="tab-bar">
+                        <button class="tab-item ${tab === 'today' ? 'active' : ''}" data-tab="today">${Icons.clock}<span class="tab-label">Today</span></button>
+                        <button class="tab-item ${tab === 'plan' ? 'active' : ''}" data-tab="plan">${Icons.calendar}<span class="tab-label">Plan</span></button>
+                        <button class="tab-item ${tab === 'profile' ? 'active' : ''}" data-tab="profile">${Icons.user}<span class="tab-label">You</span></button>
+                    </div>
+                </div>
+                ${this.celebrationOverlay()}
+            </div>`;
+        },
+        
+        todayTab() {
+            const goal = this.data.goal || 'Set your goal';
+            const progress = Math.min((this.data.streakDays / 60) * 100, 100);
+            const quote = QUOTES[new Date().getDate() % QUOTES.length];
+            const curriculum = this.data.curriculum;
+            const currentWeek = this.data.currentWeek;
+            
+            let weekMilestone = "Complete this week's tasks";
+            if (curriculum) {
+                for (const phase of curriculum.phases) {
+                    const week = phase.weeks.find(w => w.week === currentWeek);
+                    if (week) { weekMilestone = week.milestone; break; }
+                }
+            }
+            
+            // Get today's task
+            const todayIndex = new Date().getDay();
+            const todayTask = this.data.dailyTasks[todayIndex % this.data.dailyTasks.length];
+            const todayTaskId = `week${currentWeek}-day${todayIndex}`;
+            const taskDone = this.data.taskCompletions.includes(todayTaskId);
+            const twoMinOpen = this.state.twoMinOpen[todayTaskId];
+            
+            // Week progress
+            const daysCompleted = this.data.taskCompletions.filter(t => t.startsWith(`week${currentWeek}`)).length;
+            
+            // Habits
+            const today = new Date().toDateString();
+            const todayCompletions = new Set(this.data.completions.filter(c => new Date(c.date).toDateString() === today && c.completed).map(c => c.odHabitId));
+            
+            return `
+                <div class="goal-banner">
+                    <div class="goal-label">${Icons.target} Your Goal</div>
+                    <div class="goal-text">${goal}</div>
+                    <div class="goal-progress"><div class="goal-progress-fill" style="width: ${progress}%"></div></div>
+                    <div class="goal-progress-meta"><span>Day ${this.data.streakDays}</span><span>60 days to autopilot</span></div>
+                </div>
+                
+                <div class="week-info">
+                    <div class="week-info-header">
+                        <span class="week-info-label">This Week's Milestone</span>
+                        <span class="week-info-num">Week ${currentWeek}</span>
+                    </div>
+                    <div class="week-milestone-text">${weekMilestone}</div>
+                    <div class="week-progress">
+                        ${[0,1,2,3,4,5,6].map(d => `<div class="week-progress-day ${d < daysCompleted ? 'done' : ''} ${d === todayIndex ? 'today' : ''}"></div>`).join('')}
+                    </div>
+                </div>
+                
+                <div class="quote-card">
+                    <div class="quote-icon">${Icons.quote}</div>
+                    <div class="quote-text">"${quote.text}"</div>
+                    <div class="quote-author">— ${quote.author}</div>
+                </div>
+                
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-value">${this.data.streakDays} days</div>
+                        <div class="stat-label">Streak</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${daysCompleted}/7</div>
+                        <div class="stat-label">This Week</div>
+                    </div>
+                </div>
+                
+                <div class="section-header">
+                    <span class="section-title">Today's Task</span>
+                    <span class="section-action" id="view-plan">View Plan ${Icons.chevronRight}</span>
+                </div>
+                
+                ${todayTask ? `
+                    <div class="task-card ${taskDone ? 'completed' : ''}">
+                        <div class="task-header">
+                            <div class="task-check ${taskDone ? 'done' : ''}" data-complete-task="${todayTaskId}">${Icons.check}</div>
+                            <div class="task-content">
+                                <div class="task-text">${todayTask.task}</div>
+                                <div class="task-meta">
+                                    <span class="task-tag ai">AI Generated</span>
+                                    <span>~30 min</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${!taskDone ? `
+                            <div class="task-actions">
+                                <button class="task-btn cant-start" data-2min="${todayTaskId}" data-task="${todayTask.task}">${Icons.zap} Can't Start</button>
+                            </div>
+                            ${twoMinOpen ? `
+                                <div class="two-min-popup">
+                                    <div class="two-min-header">
+                                        <span class="two-min-badge">${Icons.zap} 2-Minute Version</span>
+                                    </div>
+                                    <div class="two-min-text">${twoMinOpen.twoMinuteVersion}</div>
+                                    <div class="two-min-why">${twoMinOpen.whyThisWorks}</div>
+                                    <div class="two-min-actions">
+                                        <button class="task-btn primary" data-complete-task="${todayTaskId}">Did It</button>
+                                        <button class="task-btn" data-close-2min="${todayTaskId}">Dismiss</button>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        ` : ''}
+                    </div>
+                ` : ''}
+                
+                <div class="section-header" style="margin-top: 24px;">
+                    <span class="section-title">Daily Habits</span>
+                </div>
+                
+                ${this.data.habits.length === 0 ? `
+                    <div style="text-align: center; padding: 24px; color: var(--text3);">
+                        <p>No habits yet. Add some to build your routine.</p>
+                    </div>
+                ` : this.data.habits.map(habit => {
+                    const isDone = todayCompletions.has(habit.id);
+                    const streak = this.getHabitStreak(habit.id);
+                    const habitTwoMin = this.state.twoMinOpen[habit.id];
+                    
+                    return `
+                        <div class="habit-card ${isDone ? 'completed' : ''}">
+                            <div class="habit-row">
+                                <div class="habit-check ${isDone ? 'done' : ''}" data-complete-habit="${habit.id}">${Icons.check}</div>
+                                <div class="habit-info">
+                                    <div class="habit-name">${habit.name}</div>
+                                    <div class="habit-meta">${habit.goalAmount} ${habit.unit}</div>
+                                </div>
+                                ${streak > 0 ? `<div class="habit-streak">${Icons.flame} ${streak}</div>` : ''}
+                                ${!isDone ? `<button class="habit-2min" data-2min-habit="${habit.id}" data-task="${habit.name}">${Icons.zap} 2-min</button>` : ''}
+                            </div>
+                            ${habitTwoMin ? `
+                                <div class="two-min-popup" style="margin-top: 12px;">
+                                    <div class="two-min-header">
+                                        <span class="two-min-badge">${Icons.zap} 2-Minute Version</span>
+                                    </div>
+                                    <div class="two-min-text">${habitTwoMin.twoMinuteVersion}</div>
+                                    <div class="two-min-why">${habitTwoMin.whyThisWorks}</div>
+                                    <div class="two-min-actions">
+                                        <button class="task-btn primary" data-complete-habit="${habit.id}">Did It</button>
+                                        <button class="task-btn" data-close-2min="${habit.id}">Dismiss</button>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+                
+                <button class="add-btn" id="add-habit-main">${Icons.plus} Add Habit</button>
+            `;
+        },
+        
+        planTab() {
+            const curriculum = this.data.curriculum;
+            if (!curriculum) return '<p>No curriculum yet.</p>';
+            
+            return `
+                <div class="curriculum-card">
+                    <div class="curriculum-header">
+                        <div class="curriculum-icon">${Icons.award}</div>
+                        <div>
+                            <div class="curriculum-title">${curriculum.title}</div>
+                            <div class="curriculum-meta">${curriculum.totalWeeks} weeks · Week ${this.data.currentWeek} of ${curriculum.totalWeeks}</div>
+                        </div>
+                    </div>
+                    ${curriculum.phases.map(phase => `
+                        <div class="phase">
+                            <div class="phase-header">
+                                <div class="phase-dot"></div>
+                                <div class="phase-name">${phase.name}</div>
+                            </div>
+                            <div class="phase-weeks">
+                                ${phase.weeks.map(week => `
+                                    <div class="week-item" style="${week.week === this.data.currentWeek ? 'background: var(--accent-light); margin: -10px -12px; padding: 10px 12px; border-radius: 8px;' : ''}">
+                                        <div class="week-num" style="${week.week === this.data.currentWeek ? 'color: var(--accent);' : ''}">Week ${week.week} ${week.week === this.data.currentWeek ? '← Current' : ''}</div>
+                                        <div class="week-milestone">${week.milestone}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <button class="btn btn-primary btn-full" id="view-week-plan">View This Week's Tasks</button>
+            `;
+        },
+        
+        profileTab() {
+            const initial = (this.data.name || 'U')[0].toUpperCase();
+            return `
+                <div style="text-align: center; padding: 32px 0;">
+                    <div class="header-avatar" style="width: 80px; height: 80px; font-size: 32px; margin: 0 auto 16px;">${initial}</div>
+                    <div style="font-size: 24px; font-weight: 700;">${this.data.name || 'Climber'}</div>
+                    <div style="color: var(--text3); margin-top: 4px;">Week ${this.data.currentWeek} of ${this.data.curriculum?.totalWeeks || 8}</div>
+                </div>
+                
+                <div class="plan-card">
+                    <div class="plan-header">
+                        <div class="plan-icon" style="background: var(--success-light);">${Icons.flame}</div>
+                        <div>
+                            <div class="plan-title">${this.data.streakDays} Day Streak</div>
+                            <div class="plan-meta">${60 - this.data.streakDays} days until autopilot</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-light btn-full" id="reset-data" style="margin-top: 16px; color: var(--danger);">Reset All Data</button>
+            `;
+        },
+        
+        celebrationOverlay() {
+            return `<div class="celebration" id="celebration">
+                <div class="celebration-icon">${Icons.check}</div>
+                <div class="celebration-title">Done!</div>
+                <div class="celebration-sub">Keep the momentum going</div>
+            </div>`;
+        },
+        
+        getHabitStreak(habitId) {
+            const today = new Date();
+            let streak = 0;
+            for (let i = 0; i < 365; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const completed = this.data.completions.some(c => c.odHabitId === habitId && new Date(c.date).toDateString() === d.toDateString() && c.completed);
+                if (i === 0 && !completed) continue;
+                if (completed) streak++;
+                else break;
+            }
+            return streak;
+        },
+        
+        async generateCurriculum() {
+            this.state.generating = true;
+            this.render();
+            
+            // Simulate AI delay
+            await new Promise(r => setTimeout(r, 2000));
+            
+            // Mock response
+            const key = Object.keys(MockAI.curriculum).find(k => this.data.goal.toLowerCase().includes(k.toLowerCase()));
+            this.data.curriculum = MockAI.curriculum[key] || MockAI.curriculum.default;
+            
+            this.state.generating = false;
+            this.saveData();
+            this.render();
+        },
+        
+        async generateDailyTasks() {
+            this.state.generating = true;
+            this.render();
+            
+            await new Promise(r => setTimeout(r, 1500));
+            
+            this.data.dailyTasks = MockAI.dailyTasks.default;
+            
+            this.state.generating = false;
+            this.saveData();
+            this.render();
+        },
+        
+        async generate2Min(taskId, taskText) {
+            // Mock response
+            const response = MockAI.twoMinute[taskText] || MockAI.twoMinute.default;
+            this.state.twoMinOpen[taskId] = response;
+            this.render();
+        },
+        
+        completeTask(taskId) {
+            if (!this.data.taskCompletions.includes(taskId)) {
+                this.data.taskCompletions.push(taskId);
+                this.data.streakDays = Math.max(this.data.streakDays, 1);
+                this.saveData();
+                this.showCelebration();
+            }
+        },
+        
+        completeHabit(habitId) {
+            const today = new Date().toISOString();
+            if (!this.data.completions.find(c => c.odHabitId === habitId && new Date(c.date).toDateString() === new Date().toDateString())) {
+                this.data.completions.push({ odHabitId: habitId, date: today, completed: true });
+                this.data.streakDays = Math.max(this.data.streakDays, 1);
+                this.saveData();
+                this.showCelebration();
+            }
+        },
+        
+        showCelebration() {
+            const el = document.getElementById('celebration');
+            if (el) {
+                el.classList.add('active');
+                setTimeout(() => {
+                    el.classList.remove('active');
+                    this.render();
+                }, 1500);
+            }
+        },
+        
+        attachEvents() {
+            // Setup Goal
+            document.getElementById('goal-next')?.addEventListener('click', () => {
+                const goal = document.getElementById('goal-input')?.value.trim();
+                if (goal) {
+                    this.data.goal = goal;
+                    this.state.screen = 'setup-context';
+                    this.render();
+                }
+            });
+            document.querySelectorAll('[data-level]').forEach(el => {
+                el.addEventListener('click', () => {
+                    this.data.currentLevel = el.dataset.level;
+                    this.render();
+                });
+            });
+            document.querySelectorAll('[data-weeks]').forEach(el => {
+                el.addEventListener('click', () => {
+                    this.data.weeksAvailable = parseInt(el.dataset.weeks);
+                    this.render();
+                });
+            });
+            
+            // Setup Context
+            document.getElementById('context-back')?.addEventListener('click', () => { this.state.screen = 'setup-goal'; this.render(); });
+            document.getElementById('context-next')?.addEventListener('click', () => {
+                this.data.goalContext = document.getElementById('context-input')?.value || '';
+                this.state.screen = 'setup-curriculum';
+                this.generateCurriculum();
+            });
+            document.querySelectorAll('.time-chip').forEach(el => {
+                el.addEventListener('click', () => {
+                    document.querySelectorAll('.time-chip').forEach(e => e.classList.remove('selected'));
+                    el.classList.add('selected');
+                });
+            });
+            
+            // Curriculum
+            document.getElementById('curriculum-back')?.addEventListener('click', () => { this.state.screen = 'setup-context'; this.render(); });
+            document.getElementById('curriculum-next')?.addEventListener('click', () => {
+                if (this.data.curriculum) {
+                    this.state.screen = 'setup-habits';
+                    this.render();
+                }
+            });
+            
+            // Habits setup
+            document.getElementById('habits-back')?.addEventListener('click', () => { this.state.screen = 'setup-curriculum'; this.render(); });
+            document.getElementById('add-habit-btn')?.addEventListener('click', () => {
+                const name = document.getElementById('habit-name-input')?.value.trim();
+                const amount = parseInt(document.getElementById('habit-amount-input')?.value) || 30;
+                const unit = document.getElementById('habit-unit-input')?.value || 'minutes';
+                if (name) {
+                    this.data.habits.push({ id: Date.now().toString(), name, goalAmount: amount, unit, timeOfDay: 'morning' });
+                    document.getElementById('habit-name-input').value = '';
+                    this.render();
+                }
+            });
+            document.querySelectorAll('[data-remove-habit]').forEach(el => {
+                el.addEventListener('click', () => {
+                    this.data.habits.splice(parseInt(el.dataset.removeHabit), 1);
+                    this.render();
+                });
+            });
+            document.getElementById('habits-done')?.addEventListener('click', () => {
+                this.data.streakDays = 1;
+                this.saveData();
+                this.state.screen = 'weekly-plan';
+                this.generateDailyTasks();
+            });
+            
+            // Weekly plan
+            document.getElementById('plan-back')?.addEventListener('click', () => { this.state.screen = 'app'; this.render(); });
+            document.getElementById('plan-done')?.addEventListener('click', () => { this.state.screen = 'app'; this.render(); });
+            
+            // Tabs
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', () => { this.state.activeTab = tab.dataset.tab; this.render(); });
+            });
+            
+            // View plan
+            document.getElementById('view-plan')?.addEventListener('click', () => { this.state.screen = 'weekly-plan'; this.render(); });
+            document.getElementById('view-week-plan')?.addEventListener('click', () => { this.state.screen = 'weekly-plan'; this.render(); });
+            
+            // Complete task
+            document.querySelectorAll('[data-complete-task]').forEach(el => {
+                el.addEventListener('click', () => this.completeTask(el.dataset.completeTask));
+            });
+            
+            // Complete habit
+            document.querySelectorAll('[data-complete-habit]').forEach(el => {
+                el.addEventListener('click', () => this.completeHabit(el.dataset.completeHabit));
+            });
+            
+            // 2-min for tasks
+            document.querySelectorAll('[data-2min]').forEach(el => {
+                el.addEventListener('click', () => this.generate2Min(el.dataset['2min'], el.dataset.task));
+            });
+            
+            // 2-min for habits
+            document.querySelectorAll('[data-2min-habit]').forEach(el => {
+                el.addEventListener('click', () => this.generate2Min(el.dataset['2minHabit'], el.dataset.task));
+            });
+            
+            // Close 2-min
+            document.querySelectorAll('[data-close-2min]').forEach(el => {
+                el.addEventListener('click', () => {
+                    delete this.state.twoMinOpen[el.dataset.close2min];
+                    this.render();
+                });
+            });
+            
+            // Add habit from main
+            document.getElementById('add-habit-main')?.addEventListener('click', () => {
+                const name = prompt('Habit name:');
+                if (name) {
+                    this.data.habits.push({ id: Date.now().toString(), name, goalAmount: 30, unit: 'minutes', timeOfDay: 'morning' });
+                    this.saveData();
+                    this.render();
+                }
+            });
+            
+            // Reset
+            document.getElementById('reset-data')?.addEventListener('click', () => {
+                if (confirm('Reset all data?')) {
+                    localStorage.removeItem('ascent_v7');
+                    location.reload();
+                }
+            });
+        }
+    };
+    
+    App.init();
+    </script>
+</body>
+</html>
