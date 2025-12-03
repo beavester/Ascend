@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ascent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        /* ═══════════════════════════════════════════════════════════════════════
+           ONBOARDING STYLES
+           ═══════════════════════════════════════════════════════════════════════ */
+        .onboarding-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: #0f172a;
+        }
+        
+        .onboarding-overlay.hidden {
+            display: none;
+        }
+        
+        :root {
+            /* Onboarding dark theme */
+            --ob-bg-dark: #0f172a;
+            --ob-bg-card: #1e293b;
+            --ob-text-primary: #f8fafc;
+            --ob-text-secondary: #94a3b8;
+            --ob-text-muted: #64748b;
+            --ob-accent-blue: #3b82f6;
+            --ob-accent-purple: #8b5cf6;
+            --ob-accent-pink: #ec4899;
+            --ob-accent-orange: #f97316;
+            --ob-accent-green: #22c55e;
+            --ob-accent-cyan: #06b6d4;
+            --ob-gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --ob-gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --ob-gradient-5: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --ob-gradient-hero: linear-gradient(135deg, #1e3a5f 0%, #0f172a 50%, #1a1a2e 100%);
+            
+            /* Main app light theme */
+            --bg: #f8fafc;
+            --bg2: #f1f5f9;
+            --bg3: #e2e8f0;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text2: #475569;
+            --text3: #94a3b8;
+            --accent: #3b82f6;
+            --accent-light: #dbeafe;
+            --success: #22c55e;
+            --success-light: #dcfce7;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+            --purple-light: #ede9fe;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --ring-empty: #e2e8f0;
+            --ring-progress: #3b82f6;
+            --ring-complete: #22c55e;
+            --ring-glow: rgba(34, 197, 94, 0.4);
+            --flame-core: #f59e0b;
+            --flame-outer: #ef4444;
+            --heatmap-0: #e2e8f0;
+            --heatmap-25: #dcfce7;
+            --heatmap-50: #86efac;
+            --heatmap-75: #22c55e;
+            --heatmap-100: #16a34a;
+            --mountain-rock: #64748b;
+            --mountain-snow: #f1f5f9;
+            --mountain-path: #f59e0b;
+        }
+        
+        html, body { height: 100%; overflow: hidden; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); }
+        
+        /* ═══════════════════════════════════════════════════════════════════════
+           ONBOARDING ANIMATIONS
+           ═══════════════════════════════════════════════════════════════════════ */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+        @keyframes glow { 0%, 100% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5)); } 50% { filter: drop-shadow(0 0 40px rgba(59, 130, 246, 0.8)); } }
+        @keyframes orbit { from { transform: rotate(0deg) translateX(60px) rotate(0deg); } to { transform: rotate(360deg) translateX(60px) rotate(-360deg); } }
+        @keyframes starTwinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @keyframes flicker { from { transform: scaleY(1) scaleX(1); } to { transform: scaleY(1.1) scaleX(0.9); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Onboarding layout */
+        .ob-slide { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; overflow-y: auto; -webkit-overflow-scrolling: touch; color: var(--ob-text-primary); }
+        .ob-slide.active { opacity: 1; pointer-events: auto; }
+        .ob-slide-content { flex: 1; display: flex; flex-direction: column; padding: 0 24px; padding-top: max(60px, env(safe-area-inset-top)); padding-bottom: 140px; }
+        
+        .ob-nav-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 20px 24px; padding-bottom: max(24px, env(safe-area-inset-bottom)); background: linear-gradient(to top, #0f172a 80%, transparent); z-index: 100; }
+        .ob-nav-content { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .ob-dots { display: flex; gap: 8px; }
+        .ob-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ob-text-muted); transition: all 0.3s ease; cursor: pointer; }
+        .ob-dot.active { width: 24px; border-radius: 4px; background: var(--ob-accent-blue); }
+        
+        .ob-nav-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border: none; border-radius: 12px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; }
+        .ob-nav-btn.primary { background: var(--ob-gradient-1); color: white; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4); }
+        .ob-nav-btn.secondary { background: transparent; color: var(--ob-text-secondary); }
+        
+        .ob-skip-btn { position: fixed; top: max(20px, env(safe-area-inset-top)); right: 20px; padding: 8px 16px; background: rgba(255,255,255,0.1); border: none; border-radius: 20px; color: var(--ob-text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; z-index: 100; backdrop-filter: blur(10px); }
+        
+        /* Hero slide */
+        .ob-slide-hero { background: var(--ob-gradient-hero); position: relative; overflow: hidden; }
+        .ob-hero-bg { position: absolute; inset: 0; overflow: hidden; }
+        .ob-star { position: absolute; width: 3px; height: 3px; background: white; border-radius: 50%; animation: starTwinkle 2s ease-in-out infinite; }
+        .ob-hero-mountain { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; }
+        .ob-hero-content { position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 24px; }
+        .ob-hero-icon { width: 100px; height: 100px; margin-bottom: 32px; animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite; }
+        .ob-hero-icon svg { width: 100%; height: 100%; }
+        .ob-hero-title { font-size: 42px; font-weight: 900; line-height: 1.1; margin-bottom: 16px; background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: fadeInUp 0.8s ease-out; }
+        .ob-hero-subtitle { font-size: 18px; color: var(--ob-text-secondary); line-height: 1.6; max-width: 320px; animation: fadeInUp 0.8s ease-out 0.2s both; }
+        .ob-hero-tagline { margin-top: 32px; padding: 12px 24px; background: rgba(255,255,255,0.1); border-radius: 30px; font-size: 14px; font-weight: 600; color: var(--ob-accent-cyan); backdrop-filter: blur(10px); animation: fadeInUp 0.8s ease-out 0.4s both; }
+        
+        /* Problem slide */
+        .ob-slide-problem { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); }
+        .ob-problem-visual { height: 280px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 32px; }
+        .ob-phone-addiction { position: relative; width: 120px; height: 200px; }
+        .ob-phone-frame { width: 100%; height: 100%; background: linear-gradient(145deg, #2d3748, #1a202c); border-radius: 24px; border: 3px solid #4a5568; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .ob-phone-screen { width: 90%; height: 90%; background: linear-gradient(180deg, #ef4444 0%, #f97316 50%, #eab308 100%); border-radius: 18px; display: flex; align-items: center; justify-content: center; animation: pulse 1.5s ease-in-out infinite; }
+        .ob-phone-screen span { font-size: 40px; }
+        .ob-dopamine-particles { position: absolute; inset: 0; pointer-events: none; }
+        .ob-d-particle { position: absolute; width: 8px; height: 8px; background: var(--ob-accent-orange); border-radius: 50%; animation: orbit 3s linear infinite; top: 50%; left: 50%; }
+        .ob-d-particle:nth-child(2) { animation-delay: -1s; }
+        .ob-d-particle:nth-child(3) { animation-delay: -2s; }
+        
+        .ob-section-label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(239, 68, 68, 0.2); border-radius: 20px; font-size: 12px; font-weight: 700; color: #f87171; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+        .ob-slide-title { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+        .ob-slide-text { font-size: 16px; color: var(--ob-text-secondary); line-height: 1.7; margin-bottom: 24px; }
+        .ob-highlight { color: var(--ob-text-primary); font-weight: 600; }
+        .ob-highlight-orange { color: var(--ob-accent-orange); }
+        .ob-highlight-green { color: var(--ob-accent-green); }
+        .ob-highlight-blue { color: var(--ob-accent-blue); }
+        .ob-highlight-purple { color: var(--ob-accent-purple); }
+        .ob-highlight-cyan { color: var(--ob-accent-cyan); }
+        
+        /* Dopamine slide */
+        .ob-slide-dopamine { background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%); }
+        .ob-brain-visual { height: 260px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
+        .ob-brain-container { position: relative; width: 200px; height: 200px; }
+        .ob-brain-svg { width: 100%; height: 100%; }
+        .ob-dopamine-label { position: absolute; padding: 6px 12px; background: rgba(139, 92, 246, 0.3); border: 1px solid var(--ob-accent-purple); border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--ob-accent-purple); white-space: nowrap; top: 10px; left: 50%; transform: translateX(-50%); }
+        .ob-info-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 16px; backdrop-filter: blur(10px); }
+        .ob-info-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .ob-info-card-icon { width: 40px; height: 40px; background: var(--ob-gradient-1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .ob-info-card-title { font-size: 16px; font-weight: 700; }
+        .ob-info-card-text { font-size: 14px; color: var(--ob-text-secondary); line-height: 1.6; }
+        
+        /* Exercise slide */
+        .ob-slide-exercise { background: linear-gradient(180deg, #064e3b 0%, #065f46 100%); }
+        .ob-exercise-visual { height: 260px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; position: relative; }
+        .ob-runner-container { position: relative; }
+        .ob-runner-icon { font-size: 80px; animation: float 2s ease-in-out infinite; }
+        .ob-bliss-waves { position: absolute; inset: -40px; pointer-events: none; }
+        .ob-bliss-wave { position: absolute; inset: 0; border: 2px solid var(--ob-accent-green); border-radius: 50%; opacity: 0; animation: pulse 2s ease-out infinite; }
+        .ob-bliss-wave:nth-child(2) { animation-delay: 0.5s; }
+        .ob-bliss-wave:nth-child(3) { animation-delay: 1s; }
+        .ob-molecule-float { position: absolute; font-size: 24px; animation: float 3s ease-in-out infinite; }
+        .ob-science-box { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 16px; margin-top: 16px; }
+        .ob-science-box-title { font-size: 12px; font-weight: 700; color: var(--ob-accent-green); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .ob-science-box-text { font-size: 14px; color: var(--ob-text-secondary); line-height: 1.6; }
+        
+        /* Habits slide */
+        .ob-slide-habits { background: linear-gradient(180deg, #7c2d12 0%, #9a3412 100%); }
+        .ob-habits-visual { height: 240px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
+        .ob-atom-container { position: relative; width: 180px; height: 180px; }
+        .ob-atom-core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: var(--ob-gradient-5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 40px rgba(250, 112, 154, 0.5); animation: pulse 2s ease-in-out infinite; }
+        .ob-atom-orbit { position: absolute; inset: 0; border: 2px dashed rgba(255,255,255,0.2); border-radius: 50%; }
+        .ob-atom-orbit:nth-child(2) { inset: 20px; animation: spin 8s linear infinite; }
+        .ob-atom-orbit:nth-child(3) { inset: 40px; animation: spin 12s linear infinite reverse; }
+        .ob-atom-electron { position: absolute; width: 12px; height: 12px; background: var(--ob-accent-orange); border-radius: 50%; box-shadow: 0 0 10px var(--ob-accent-orange); }
+        .ob-percent-badge { display: inline-flex; align-items: baseline; gap: 4px; padding: 8px 16px; background: rgba(249, 115, 22, 0.2); border-radius: 8px; margin: 8px 0; }
+        .ob-percent-badge .big { font-size: 32px; font-weight: 900; color: var(--ob-accent-orange); }
+        .ob-percent-badge .small { font-size: 14px; color: var(--ob-text-secondary); }
+        .ob-habit-equation { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
+        .ob-habit-step { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .ob-habit-step-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .ob-habit-step-label { font-size: 11px; font-weight: 600; color: var(--ob-text-secondary); text-transform: uppercase; }
+        .ob-habit-arrow { font-size: 20px; color: var(--ob-text-muted); }
+        
+        /* Start slide */
+        .ob-slide-start { background: linear-gradient(180deg, #1e3a5f 0%, #1e40af 100%); }
+        .ob-start-visual { height: 280px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; position: relative; }
+        .ob-rocket-container { position: relative; }
+        .ob-rocket-icon { font-size: 80px; transform: rotate(-45deg); animation: float 2s ease-in-out infinite; }
+        .ob-launch-flames { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%) rotate(-45deg); }
+        .ob-flame { width: 20px; height: 40px; background: linear-gradient(to bottom, #f97316, #fbbf24, transparent); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; animation: flicker 0.2s ease-in-out infinite alternate; }
+        .ob-truth-bomb { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 20px; }
+        .ob-truth-bomb-text { font-size: 20px; font-weight: 700; line-height: 1.4; background: linear-gradient(135deg, #fff, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .ob-two-min-preview { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; }
+        .ob-two-min-icon { width: 50px; height: 50px; background: var(--ob-accent-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+        .ob-two-min-content h4 { font-size: 14px; font-weight: 700; color: var(--ob-accent-green); margin-bottom: 4px; }
+        .ob-two-min-content p { font-size: 13px; color: var(--ob-text-secondary); line-height: 1.5; }
+        
+        /* Solution slide */
+        .ob-slide-solution { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+        .ob-solution-visual { height: 240px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
+        .ob-features-preview { display: flex; gap: 12px; }
+        .ob-feature-card { width: 100px; height: 140px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; animation: fadeInUp 0.5s ease-out both; }
+        .ob-feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .ob-feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .ob-feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .ob-feature-icon { font-size: 32px; }
+        .ob-feature-name { font-size: 11px; font-weight: 600; color: var(--ob-text-secondary); line-height: 1.3; }
+        .ob-promise-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .ob-promise-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        .ob-promise-check { width: 24px; height: 24px; background: var(--ob-accent-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ob-promise-check svg { width: 14px; height: 14px; stroke: white; stroke-width: 3; }
+        .ob-promise-text { font-size: 14px; color: var(--ob-text-primary); }
+        
+        /* Final slide */
+        .ob-slide-final { background: var(--ob-gradient-hero); position: relative; overflow: hidden; }
+        .ob-final-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative; z-index: 10; }
+        .ob-final-icon { width: 120px; height: 120px; margin-bottom: 32px; animation: float 3s ease-in-out infinite; }
+        .ob-final-title { font-size: 36px; font-weight: 900; margin-bottom: 16px; background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .ob-final-subtitle { font-size: 18px; color: var(--ob-text-secondary); max-width: 300px; line-height: 1.6; margin-bottom: 40px; }
+        .ob-start-btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 48px; background: var(--ob-gradient-4); border: none; border-radius: 16px; font-family: inherit; font-size: 18px; font-weight: 800; color: #0f172a; cursor: pointer; box-shadow: 0 8px 30px rgba(67, 233, 123, 0.4); transition: all 0.3s ease; }
+        .ob-start-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(67, 233, 123, 0.5); }
+        .ob-start-btn svg { width: 20px; height: 20px; }
+        
+        /* ═══════════════════════════════════════════════════════════════════════
+           MAIN APP STYLES
+           ═══════════════════════════════════════════════════════════════════════ */
+        #main-app { display: none; }
+        #main-app.active { display: block; }
+        
+        .screen { position: fixed; inset: 0; display: none; flex-direction: column; overflow: hidden; background: var(--bg); }
+        .screen.active { display: flex; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes checkPop { 0% { transform: scale(0); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+        @keyframes ringPulse { 0%, 100% { filter: drop-shadow(0 0 0 transparent); } 50% { filter: drop-shadow(0 0 8px var(--ring-glow)); } }
+        @keyframes flameFlicker { 0%, 100% { transform: scaleY(1) scaleX(1); } 25% { transform: scaleY(1.1) scaleX(0.95); } 50% { transform: scaleY(0.95) scaleX(1.05); } 75% { transform: scaleY(1.05) scaleX(0.98); } }
+        @keyframes flameGlow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6)); } 50% { filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.9)); } }
+        @keyframes particleRise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-20px) scale(0); opacity: 0; } }
+        @keyframes confetti { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        @keyframes badgeBounce { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
+        @keyframes particleExplode { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+        
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; border: none; border-radius: var(--radius); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-light { background: var(--bg2); color: var(--text); }
+        .btn-ghost { background: transparent; color: var(--text3); }
+        .btn-sm { padding: 10px 16px; font-size: 13px; }
+        .btn-full { width: 100%; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .input { width: 100%; padding: 14px 16px; background: var(--card); border: 1px solid var(--bg3); border-radius: var(--radius); font-family: inherit; font-size: 15px; color: var(--text); transition: all 0.2s; }
+        .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+        .input::placeholder { color: var(--text3); }
+        .textarea { min-height: 120px; resize: none; line-height: 1.6; }
+        
+        #splash { background: linear-gradient(135deg, #3b82f6, #8b5cf6); justify-content: center; align-items: center; color: #fff; }
+        .splash-icon { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .splash-icon svg { width: 40px; height: 40px; }
+        .splash-title { font-size: 32px; font-weight: 800; }
+        .splash-sub { font-size: 16px; opacity: 0.9; }
+        
+        .setup { flex: 1; display: flex; flex-direction: column; }
+        .setup-header { padding: 20px 24px; padding-top: max(60px, env(safe-area-inset-top)); }
+        .setup-back { display: flex; align-items: center; gap: 4px; font-size: 15px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 20px; }
+        .setup-progress { display: flex; gap: 6px; margin-bottom: 24px; }
+        .setup-progress-bar { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+        .setup-progress-fill { height: 100%; background: var(--accent); }
+        .setup-title { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+        .setup-subtitle { font-size: 15px; color: var(--text2); line-height: 1.6; }
+        .setup-content { flex: 1; overflow-y: auto; padding: 0 24px 24px; -webkit-overflow-scrolling: touch; }
+        .setup-footer { padding: 16px 24px; padding-bottom: max(24px, env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--bg3); }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { padding: 10px 16px; background: var(--bg2); border: 2px solid transparent; border-radius: var(--radius); font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+        .chip.selected { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+        .time-chips { display: flex; gap: 8px; }
+        .time-chip { flex: 1; padding: 16px 12px; background: var(--bg2); border: 2px solid transparent; border-radius: var(--radius); text-align: center; cursor: pointer; }
+        .time-chip.selected { background: var(--accent-light); border-color: var(--accent); }
+        .time-chip-label { font-size: 12px; font-weight: 600; color: var(--text2); }
+        .time-chip.selected .time-chip-label { color: var(--accent); }
+        
+        .loading-card { background: var(--card); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; box-shadow: var(--shadow); }
+        .loading-spinner { width: 48px; height: 48px; border: 3px solid var(--bg3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+        .loading-text { font-size: 15px; color: var(--text2); }
+        
+        .curriculum-card { background: var(--card); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+        .curriculum-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .curriculum-icon { width: 44px; height: 44px; background: var(--accent-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .curriculum-title { font-size: 18px; font-weight: 700; }
+        .curriculum-meta { font-size: 13px; color: var(--text3); margin-top: 2px; }
+        .phase { margin-bottom: 16px; }
+        .phase-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .phase-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .phase-name { font-size: 14px; font-weight: 700; color: var(--accent); }
+        .phase-weeks { padding-left: 16px; border-left: 2px solid var(--bg3); }
+        .week-item { padding: 10px 0 10px 12px; border-bottom: 1px solid var(--bg2); }
+        .week-item:last-child { border-bottom: none; }
+        .week-num { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; margin-bottom: 2px; }
+        .week-milestone { font-size: 14px; color: var(--text); line-height: 1.4; }
+        
+        .app { display: flex; flex-direction: column; height: 100%; }
+        .app-header { padding: 16px 20px; padding-top: max(52px, env(safe-area-inset-top)); background: var(--card); border-bottom: 1px solid var(--bg3); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; }
+        .header-greeting { font-size: 13px; color: var(--text3); font-weight: 500; }
+        .header-date { font-size: 20px; font-weight: 700; margin-top: 2px; }
+        .header-avatar { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--purple)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 16px; }
+        .app-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
+        
+        .daily-ring-container { background: var(--card); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 24px; }
+        .daily-ring { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+        .daily-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .daily-ring .ring-bg { fill: none; stroke: var(--ring-empty); stroke-width: 10; }
+        .daily-ring .ring-progress { fill: none; stroke: var(--ring-progress); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s; }
+        .daily-ring.complete .ring-progress { stroke: var(--ring-complete); animation: ringPulse 1s ease-in-out 3; }
+        .daily-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .daily-ring-percent { font-size: 28px; font-weight: 800; color: var(--text); }
+        .daily-ring-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; }
+        .daily-ring-info { flex: 1; }
+        .daily-ring-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .daily-ring-subtitle { font-size: 13px; color: var(--text3); line-height: 1.5; }
+        .daily-ring-stats { display: flex; gap: 16px; margin-top: 12px; }
+        .daily-ring-stat { font-size: 13px; color: var(--text2); }
+        .daily-ring-stat strong { color: var(--text); }
+        
+        .streak-card { background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; position: relative; overflow: hidden; }
+        .streak-flame-container { position: relative; width: 60px; height: 70px; display: flex; align-items: flex-end; justify-content: center; }
+        .streak-flame { animation: flameFlicker 0.5s ease-in-out infinite, flameGlow 1s ease-in-out infinite; transform-origin: bottom center; }
+        .streak-flame svg { width: 50px; height: 60px; }
+        .streak-flame.small svg { width: 35px; height: 45px; }
+        .streak-flame.medium svg { width: 45px; height: 55px; }
+        .streak-flame.large svg { width: 55px; height: 65px; }
+        .streak-flame.epic svg { width: 60px; height: 70px; }
+        .flame-particles { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; }
+        .flame-particle { position: absolute; width: 6px; height: 6px; background: var(--flame-core); border-radius: 50%; animation: particleRise 1s ease-out infinite; opacity: 0; }
+        .flame-particle:nth-child(1) { left: -8px; animation-delay: 0s; }
+        .flame-particle:nth-child(2) { left: 0px; animation-delay: 0.3s; }
+        .flame-particle:nth-child(3) { left: 8px; animation-delay: 0.6s; }
+        .streak-info { flex: 1; }
+        .streak-number { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; }
+        .streak-label { font-size: 14px; font-weight: 600; color: var(--text2); margin-top: 2px; }
+        .streak-message { font-size: 12px; color: var(--text2); margin-top: 8px; padding: 6px 10px; background: rgba(255,255,255,0.6); border-radius: 6px; display: inline-block; }
+        
+        .mountain-card { background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 50%, var(--card) 100%); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); overflow: hidden; }
+        .mountain-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .mountain-title { font-size: 14px; font-weight: 700; color: var(--text); }
+        .mountain-progress-text { font-size: 12px; color: var(--text3); }
+        .mountain-visual { position: relative; height: 180px; }
+        .mountain-svg { width: 100%; height: 100%; }
+        .mountain-path { fill: none; stroke: var(--mountain-path); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 5, 5; }
+        .mountain-path-walked { fill: none; stroke: var(--success); stroke-width: 4; stroke-linecap: round; }
+        .camp-marker { cursor: pointer; }
+        .camp-marker circle { transition: all 0.2s; }
+        .camp-marker.unlocked circle { fill: var(--success); }
+        .camp-marker.current circle { fill: var(--accent); filter: drop-shadow(0 0 6px var(--accent)); }
+        .camp-marker text { font-size: 8px; font-weight: 700; fill: var(--text3); }
+        .camp-marker.unlocked text, .camp-marker.current text { fill: var(--text); }
+        .climber-icon { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .mountain-legend { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bg3); }
+        .mountain-camp { text-align: center; flex: 1; }
+        .mountain-camp-icon { width: 24px; height: 24px; margin: 0 auto 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        .mountain-camp-icon.locked { background: var(--bg3); color: var(--text3); }
+        .mountain-camp-icon.unlocked { background: var(--success); color: #fff; }
+        .mountain-camp-icon.current { background: var(--accent); color: #fff; }
+        .mountain-camp-name { font-size: 10px; font-weight: 600; color: var(--text3); }
+        .mountain-camp.unlocked .mountain-camp-name { color: var(--text); }
+        .mountain-camp-day { font-size: 9px; color: var(--text3); }
+        
+        .heatmap-card { background: var(--card); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
+        .heatmap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .heatmap-title { font-size: 14px; font-weight: 700; color: var(--text); }
+        .heatmap-legend { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text3); }
+        .heatmap-legend-box { width: 10px; height: 10px; border-radius: 2px; }
+        .heatmap-days-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+        .heatmap-days-header span { font-size: 10px; font-weight: 600; color: var(--text3); text-align: center; }
+        .heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .heatmap-cell { aspect-ratio: 1; border-radius: 3px; position: relative; cursor: pointer; transition: transform 0.1s; }
+        .heatmap-cell:hover { transform: scale(1.2); z-index: 1; }
+        .heatmap-cell.empty { background: transparent; cursor: default; }
+        .heatmap-cell.empty:hover { transform: none; }
+        .heatmap-cell.future { background: var(--bg2); opacity: 0.5; }
+        .heatmap-cell.level-0 { background: var(--heatmap-0); }
+        .heatmap-cell.level-1 { background: var(--heatmap-25); }
+        .heatmap-cell.level-2 { background: var(--heatmap-50); }
+        .heatmap-cell.level-3 { background: var(--heatmap-75); }
+        .heatmap-cell.level-4 { background: var(--heatmap-100); }
+        .heatmap-cell.today { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .heatmap-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; font-size: 10px; padding: 4px 8px; border-radius: 4px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; }
+        .heatmap-cell:hover .heatmap-tooltip { opacity: 1; }
+        
+        .week-info { background: var(--card); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
+        .week-info-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .week-info-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; }
+        .week-info-num { font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-light); padding: 4px 10px; border-radius: 20px; }
+        .week-milestone-text { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
+        
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; margin-top: 8px; }
+        .section-title { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+        .section-action { font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; }
+        
+        .task-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+        .task-card.completed { opacity: 0.6; }
+        .task-header { display: flex; align-items: flex-start; gap: 12px; }
+        .task-check { width: 26px; height: 26px; border: 2px solid var(--bg3); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; position: relative; }
+        .task-check:hover { border-color: var(--success); }
+        .task-check.done { background: var(--success); border-color: var(--success); }
+        .task-check svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 3; opacity: 0; }
+        .task-check.done svg { opacity: 1; animation: checkPop 0.3s; }
+        .task-content { flex: 1; }
+        .task-text { font-size: 15px; font-weight: 500; color: var(--text); line-height: 1.4; }
+        .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--text3); }
+        .task-tag { padding: 2px 8px; background: var(--bg2); border-radius: 4px; font-weight: 600; }
+        .task-tag.ai { background: var(--purple-light); color: var(--purple); }
+        .task-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bg2); }
+        .task-btn { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--bg2); border: none; border-radius: var(--radius); font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+        .task-btn:hover { background: var(--bg3); }
+        .task-btn.primary { background: var(--accent); color: #fff; }
+        .task-btn.cant-start { background: var(--warning-light); color: var(--warning); }
+        .task-btn:disabled { opacity: 0.5; }
+        .two-min-popup { background: var(--warning-light); border: 2px solid var(--warning); border-radius: var(--radius); padding: 14px; margin-top: 12px; animation: slideUp 0.3s; }
+        .two-min-badge { font-size: 11px; font-weight: 700; color: var(--warning); text-transform: uppercase; margin-bottom: 8px; }
+        .two-min-text { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+        .two-min-why { font-size: 12px; color: var(--text2); margin-top: 6px; font-style: italic; }
+        .two-min-actions { display: flex; gap: 8px; margin-top: 10px; }
+        
+        .habit-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); position: relative; }
+        .habit-row { display: flex; align-items: center; gap: 12px; }
+        .habit-check { width: 24px; height: 24px; border: 2px solid var(--bg3); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .habit-check.done { background: var(--success); border-color: var(--success); }
+        .habit-check svg { width: 12px; height: 12px; stroke: #fff; stroke-width: 3; opacity: 0; }
+        .habit-check.done svg { opacity: 1; }
+        .habit-info { flex: 1; }
+        .habit-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .habit-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+        .habit-streak { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--warning); }
+        .habit-2min { padding: 6px 10px; background: var(--warning-light); border: none; border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--warning); cursor: pointer; }
+        .add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: transparent; border: 2px dashed var(--bg3); border-radius: var(--radius); color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+        
+        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--bg3); padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom)); display: flex; justify-content: space-around; z-index: 100; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 16px; background: none; border: none; cursor: pointer; color: var(--text3); }
+        .tab-item.active { color: var(--accent); }
+        .tab-item svg { width: 22px; height: 22px; }
+        .tab-label { font-size: 11px; font-weight: 500; }
+        
+        .particles-container { position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden; }
+        .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; animation: particleExplode 0.6s ease-out forwards; }
+        .celebration { position: fixed; inset: 0; background: linear-gradient(135deg, var(--success), #16a34a); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+        .celebration.active { display: flex; animation: fadeIn 0.3s; }
+        .celebration-icon { width: 80px; height: 80px; border: 3px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: badgeBounce 0.5s ease-out; }
+        .celebration-title { font-size: 28px; font-weight: 800; }
+        .celebration-sub { font-size: 16px; opacity: 0.9; margin-top: 4px; }
+        .milestone-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .milestone-modal.active { display: flex; animation: fadeIn 0.3s; }
+        .milestone-content { background: var(--card); border-radius: var(--radius-xl); padding: 32px; text-align: center; max-width: 320px; animation: slideUp 0.4s ease-out; }
+        .milestone-badge { width: 80px; height: 80px; margin: 0 auto 20px; animation: badgeBounce 0.6s ease-out; }
+        .milestone-badge svg { width: 100%; height: 100%; }
+        .milestone-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+        .milestone-subtitle { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 24px; }
+        .milestone-btn { width: 100%; }
+        .confetti { position: fixed; width: 10px; height: 10px; top: -10px; animation: confetti 3s linear forwards; z-index: 3001; pointer-events: none; }
+        .mini-spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        
+        .plan-card { background: var(--card); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+        .plan-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .plan-icon { width: 40px; height: 40px; background: var(--accent-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .plan-title { font-size: 16px; font-weight: 700; }
+        .plan-meta { font-size: 13px; color: var(--text3); margin-top: 2px; }
+        .day-task { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--bg2); }
+        .day-task:last-child { border-bottom: none; }
+        .day-num { width: 32px; height: 32px; background: var(--bg2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--text3); }
+        .day-num.today { background: var(--accent); color: #fff; }
+        .day-num.done { background: var(--success); color: #fff; }
+        .day-content { flex: 1; }
+        .day-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; margin-bottom: 2px; }
+        .day-text { font-size: 14px; color: var(--text); line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         ONBOARDING OVERLAY
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="onboarding-overlay" id="onboarding">
+        <button class="ob-skip-btn" id="ob-skip-btn">Skip</button>
+        
+        <!-- SLIDE 1: HERO -->
+        <div class="ob-slide ob-slide-hero active" data-slide="0">
+            <div class="ob-hero-bg">
+                <div class="ob-star" style="top: 10%; left: 20%;"></div>
+                <div class="ob-star" style="top: 15%; left: 70%; animation-delay: 0.5s;"></div>
+                <div class="ob-star" style="top: 25%; left: 40%; animation-delay: 1s;"></div>
+                <div class="ob-star" style="top: 8%; left: 85%; animation-delay: 1.5s;"></div>
+                <div class="ob-star" style="top: 30%; left: 15%; animation-delay: 2s;"></div>
+                <svg class="ob-hero-mountain" viewBox="0 0 400 200" preserveAspectRatio="none">
+                    <defs><linearGradient id="mt1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#1e3a5f"/><stop offset="100%" style="stop-color:#0f172a"/></linearGradient></defs>
+                    <polygon fill="url(#mt1)" points="0,200 100,80 200,140 300,40 400,100 400,200"/>
+                    <polygon fill="#f1f5f9" points="295,45 300,40 305,45" opacity="0.8"/>
+                </svg>
+            </div>
+            <div class="ob-hero-content">
+                <div class="ob-hero-icon"><svg viewBox="0 0 100 100" fill="none"><defs><linearGradient id="iconGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#3b82f6"/><stop offset="100%" style="stop-color:#8b5cf6"/></linearGradient></defs><path d="M50 10 L85 85 H15 Z" fill="url(#iconGrad)" opacity="0.9"/><path d="M50 25 L70 75 H30 Z" fill="#fff" opacity="0.3"/><circle cx="50" cy="35" r="5" fill="#fff"/></svg></div>
+                <h1 class="ob-hero-title">Ascent</h1>
+                <p class="ob-hero-subtitle">Your brain is wired for progress. Let's use that to build the life you want.</p>
+                <div class="ob-hero-tagline">✨ Powered by neuroscience</div>
+            </div>
+        </div>
+        
+        <!-- SLIDE 2: THE PROBLEM -->
+        <div class="ob-slide ob-slide-problem" data-slide="1">
+            <div class="ob-slide-content">
+                <div class="ob-problem-visual">
+                    <div class="ob-phone-addiction">
+                        <div class="ob-phone-frame"><div class="ob-phone-screen"><span>📱</span></div></div>
+                        <div class="ob-dopamine-particles"><div class="ob-d-particle"></div><div class="ob-d-particle"></div><div class="ob-d-particle"></div></div>
+                    </div>
+                </div>
+                <span class="ob-section-label">⚠️ The Problem</span>
+                <h2 class="ob-slide-title">Your brain is being hijacked</h2>
+                <p class="ob-slide-text">Social media, games, and apps are designed by teams of scientists to be <span class="ob-highlight-orange">as addictive as possible</span>. They've figured out exactly how to hijack your brain's reward system.</p>
+                <p class="ob-slide-text">Every notification, every like, every scroll gives you a tiny hit of a chemical called <span class="ob-highlight-purple">dopamine</span>. It feels good in the moment, but it's training your brain to crave <span class="ob-highlight">easy rewards</span> instead of meaningful ones.</p>
+            </div>
+        </div>
+        
+        <!-- SLIDE 3: DOPAMINE -->
+        <div class="ob-slide ob-slide-dopamine" data-slide="2">
+            <div class="ob-slide-content">
+                <div class="ob-brain-visual">
+                    <div class="ob-brain-container">
+                        <svg class="ob-brain-svg" viewBox="0 0 200 200">
+                            <ellipse cx="100" cy="100" rx="80" ry="70" fill="none" stroke="#a5b4fc" stroke-width="2" opacity="0.3"/>
+                            <ellipse cx="100" cy="100" rx="60" ry="50" fill="none" stroke="#a5b4fc" stroke-width="2" opacity="0.5"/>
+                            <circle cx="70" cy="80" r="8" fill="#8b5cf6"><animate attributeName="r" values="6;8;6" dur="2s" repeatCount="indefinite"/></circle>
+                            <circle cx="130" cy="80" r="8" fill="#8b5cf6"><animate attributeName="r" values="6;8;6" dur="2s" begin="0.3s" repeatCount="indefinite"/></circle>
+                            <circle cx="100" cy="120" r="10" fill="#a855f7"><animate attributeName="r" values="8;12;8" dur="1.5s" repeatCount="indefinite"/></circle>
+                            <path d="M70 80 Q90 70 100 120" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="10 90"><animate attributeName="stroke-dashoffset" values="100;0" dur="1.5s" repeatCount="indefinite"/></path>
+                            <path d="M130 80 Q110 70 100 120" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="10 90"><animate attributeName="stroke-dashoffset" values="100;0" dur="1.5s" begin="0.5s" repeatCount="indefinite"/></path>
+                        </svg>
+                        <div class="ob-dopamine-label">Reward Center</div>
+                    </div>
+                </div>
+                <span class="ob-section-label" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa;">🧠 The Science</span>
+                <h2 class="ob-slide-title">Meet dopamine: your motivation molecule</h2>
+                <p class="ob-slide-text"><span class="ob-highlight-purple">Dopamine</span> isn't just about feeling good—it's about <span class="ob-highlight">wanting things</span>. It's the chemical that makes you get up and chase goals.</p>
+                <div class="ob-info-card">
+                    <div class="ob-info-card-header"><div class="ob-info-card-icon">💡</div><div class="ob-info-card-title">Here's the key insight</div></div>
+                    <p class="ob-info-card-text">Your brain releases dopamine based on <strong>prediction</strong>. When something is better than expected? Dopamine surge. When you complete a challenge? Dopamine. When you see progress toward a goal? <span class="ob-highlight-purple">Dopamine</span>.</p>
+                </div>
+                <p class="ob-slide-text">The trick isn't to avoid dopamine—it's to <span class="ob-highlight-green">redirect it</span> toward things that actually make your life better.</p>
+            </div>
+        </div>
+        
+        <!-- SLIDE 4: EXERCISE -->
+        <div class="ob-slide ob-slide-exercise" data-slide="3">
+            <div class="ob-slide-content">
+                <div class="ob-exercise-visual">
+                    <div class="ob-molecule-float" style="top: 20%; left: 10%;">🌿</div>
+                    <div class="ob-molecule-float" style="top: 30%; right: 15%; animation-delay: 0.5s;">✨</div>
+                    <div class="ob-molecule-float" style="bottom: 30%; left: 20%; animation-delay: 1s;">🌿</div>
+                    <div class="ob-molecule-float" style="bottom: 20%; right: 10%; animation-delay: 1.5s;">✨</div>
+                    <div class="ob-runner-container">
+                        <div class="ob-runner-icon">🏃</div>
+                        <div class="ob-bliss-waves"><div class="ob-bliss-wave"></div><div class="ob-bliss-wave"></div><div class="ob-bliss-wave"></div></div>
+                    </div>
+                </div>
+                <span class="ob-section-label" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">🏃 Exercise Science</span>
+                <h2 class="ob-slide-title">The "runner's high" is real</h2>
+                <p class="ob-slide-text">Ever heard of the "runner's high"? Scientists used to think it was caused by endorphins. But new research shows it's actually something cooler: your body's own <span class="ob-highlight-green">endocannabinoid system</span>.</p>
+                <p class="ob-slide-text">Yes, your body makes its own natural "feel-good" molecules—similar to what makes certain plants... relaxing. 😉 Exercise triggers their release, creating that <span class="ob-highlight">calm, happy feeling</span> after a workout.</p>
+                <div class="ob-science-box">
+                    <div class="ob-science-box-title">🔬 Why this matters</div>
+                    <p class="ob-science-box-text">Unlike scrolling social media (which depletes your dopamine), exercise actually <strong>builds up</strong> your brain's reward system. The more you move, the better you feel—and the easier motivation becomes for <em>everything</em>.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SLIDE 5: HABITS -->
+        <div class="ob-slide ob-slide-habits" data-slide="4">
+            <div class="ob-slide-content">
+                <div class="ob-habits-visual">
+                    <div class="ob-atom-container">
+                        <div class="ob-atom-orbit"></div>
+                        <div class="ob-atom-orbit"><div class="ob-atom-electron" style="top: 0; left: 50%; transform: translateX(-50%);"></div></div>
+                        <div class="ob-atom-orbit"><div class="ob-atom-electron" style="bottom: 0; right: 0;"></div></div>
+                        <div class="ob-atom-core">⚛️</div>
+                    </div>
+                </div>
+                <span class="ob-section-label" style="background: rgba(249, 115, 22, 0.2); color: #fb923c;">📚 Habit Science</span>
+                <h2 class="ob-slide-title">Tiny changes, remarkable results</h2>
+                <p class="ob-slide-text">Here's a wild fact from the book <em>Atomic Habits</em>:</p>
+                <div class="ob-percent-badge"><span class="big">1%</span><span class="small">better every day = <strong>37x</strong> better in a year</span></div>
+                <p class="ob-slide-text">Most people fail at habits because they try to do too much, too fast. But the research shows that <span class="ob-highlight-orange">showing up matters more than crushing it</span>.</p>
+                <div class="ob-habit-equation">
+                    <div class="ob-habit-step"><div class="ob-habit-step-icon">👀</div><span class="ob-habit-step-label">See It</span></div>
+                    <span class="ob-habit-arrow">→</span>
+                    <div class="ob-habit-step"><div class="ob-habit-step-icon">💫</div><span class="ob-habit-step-label">Want It</span></div>
+                    <span class="ob-habit-arrow">→</span>
+                    <div class="ob-habit-step"><div class="ob-habit-step-icon">⚡</div><span class="ob-habit-step-label">Do It</span></div>
+                    <span class="ob-habit-arrow">→</span>
+                    <div class="ob-habit-step"><div class="ob-habit-step-icon">🎁</div><span class="ob-habit-step-label">Reward</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SLIDE 6: START -->
+        <div class="ob-slide ob-slide-start" data-slide="5">
+            <div class="ob-slide-content">
+                <div class="ob-start-visual">
+                    <div class="ob-rocket-container">
+                        <div class="ob-rocket-icon">🚀</div>
+                        <div class="ob-launch-flames"><div class="ob-flame"></div></div>
+                    </div>
+                </div>
+                <span class="ob-section-label" style="background: rgba(6, 182, 212, 0.2); color: #22d3ee;">🎯 Real Talk</span>
+                <h2 class="ob-slide-title">Starting is the hardest part</h2>
+                <div class="ob-truth-bomb"><p class="ob-truth-bomb-text">"The hardest part of any journey is lacing up your shoes."</p></div>
+                <p class="ob-slide-text">Your brain is wired to avoid effort. It's not laziness—it's <span class="ob-highlight">evolution</span>. Your ancestors needed to conserve energy to survive. But that instinct doesn't serve you anymore.</p>
+                <div class="ob-two-min-preview">
+                    <div class="ob-two-min-icon">⚡</div>
+                    <div class="ob-two-min-content"><h4>The 2-Minute Rule</h4><p>Every habit has a tiny version. Can't run 5 miles? Just put on your shoes. Can't meditate 20 min? Just breathe for 2. The goal is to <strong>show up</strong>.</p></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SLIDE 7: SOLUTION -->
+        <div class="ob-slide ob-slide-solution" data-slide="6">
+            <div class="ob-slide-content">
+                <div class="ob-solution-visual">
+                    <div class="ob-features-preview">
+                        <div class="ob-feature-card"><div class="ob-feature-icon">🔥</div><div class="ob-feature-name">Streak Flames</div></div>
+                        <div class="ob-feature-card"><div class="ob-feature-icon">⭕</div><div class="ob-feature-name">Daily Rings</div></div>
+                        <div class="ob-feature-card"><div class="ob-feature-icon">🏔️</div><div class="ob-feature-name">Mountain Climb</div></div>
+                    </div>
+                </div>
+                <span class="ob-section-label" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;">✨ The Solution</span>
+                <h2 class="ob-slide-title">Ascent redirects your dopamine</h2>
+                <p class="ob-slide-text">We took the same psychology that makes apps addictive—progress rings, streaks, level-ups—and pointed it at <span class="ob-highlight-blue">things that actually matter</span>.</p>
+                <div class="ob-promise-list">
+                    <div class="ob-promise-item"><div class="ob-promise-check"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div><span class="ob-promise-text">AI breaks big goals into daily micro-tasks</span></div>
+                    <div class="ob-promise-item"><div class="ob-promise-check"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div><span class="ob-promise-text">Satisfying visuals that reward consistency</span></div>
+                    <div class="ob-promise-item"><div class="ob-promise-check"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div><span class="ob-promise-text">2-minute versions when you're struggling</span></div>
+                    <div class="ob-promise-item"><div class="ob-promise-check"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div><span class="ob-promise-text">No shame, no guilt—just gentle momentum</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SLIDE 8: FINAL -->
+        <div class="ob-slide ob-slide-final" data-slide="7">
+            <div class="ob-hero-bg">
+                <div class="ob-star" style="top: 10%; left: 20%;"></div>
+                <div class="ob-star" style="top: 15%; left: 70%; animation-delay: 0.5s;"></div>
+                <div class="ob-star" style="top: 25%; left: 40%; animation-delay: 1s;"></div>
+                <div class="ob-star" style="top: 8%; left: 85%; animation-delay: 1.5s;"></div>
+                <svg class="ob-hero-mountain" viewBox="0 0 400 200" preserveAspectRatio="none">
+                    <defs><linearGradient id="mt1b" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#1e3a5f"/><stop offset="100%" style="stop-color:#0f172a"/></linearGradient></defs>
+                    <polygon fill="url(#mt1b)" points="0,200 100,80 200,140 300,40 400,100 400,200"/>
+                    <polygon fill="#f1f5f9" points="295,45 300,40 305,45" opacity="0.8"/>
+                </svg>
+            </div>
+            <div class="ob-slide-content ob-final-content">
+                <div class="ob-final-icon"><svg viewBox="0 0 120 120" fill="none"><defs><linearGradient id="finalGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#22c55e"/><stop offset="100%" style="stop-color:#06b6d4"/></linearGradient></defs><circle cx="60" cy="60" r="55" stroke="url(#finalGrad)" stroke-width="4" fill="none"/><path d="M60 20 L90 90 H30 Z" fill="url(#finalGrad)" opacity="0.9"/><path d="M60 35 L75 80 H45 Z" fill="#fff" opacity="0.3"/><circle cx="60" cy="45" r="6" fill="#fff"/></svg></div>
+                <h1 class="ob-final-title">Ready to climb?</h1>
+                <p class="ob-final-subtitle">Every summit starts with a single step. Let's take it together.</p>
+                <button class="ob-start-btn" id="ob-start-btn">Begin Your Ascent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+            </div>
+        </div>
+        
+        <!-- NAV -->
+        <div class="ob-nav-bar">
+            <div class="ob-nav-content">
+                <button class="ob-nav-btn secondary" id="ob-prev-btn" style="visibility: hidden;">Back</button>
+                <div class="ob-dots">
+                    <div class="ob-dot active" data-slide="0"></div>
+                    <div class="ob-dot" data-slide="1"></div>
+                    <div class="ob-dot" data-slide="2"></div>
+                    <div class="ob-dot" data-slide="3"></div>
+                    <div class="ob-dot" data-slide="4"></div>
+                    <div class="ob-dot" data-slide="5"></div>
+                    <div class="ob-dot" data-slide="6"></div>
+                    <div class="ob-dot" data-slide="7"></div>
+                </div>
+                <button class="ob-nav-btn primary" id="ob-next-btn">Next</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         MAIN APP
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="main-app">
+        <div id="app"></div>
+        <div class="particles-container" id="particles"></div>
+    </div>
+    
+    <script>
+    // ═══════════════════════════════════════════════════════════════════════
+    // ONBOARDING CONTROLLER
+    // ═══════════════════════════════════════════════════════════════════════
+    const Onboarding = {
+        currentSlide: 0,
+        totalSlides: 8,
+        
+        init() {
+            // Check if onboarding already completed
+            if (localStorage.getItem('ascent_onboarding_complete')) {
+                this.complete();
+                return;
+            }
+            
+            this.attachEvents();
+        },
+        
+        goToSlide(index) {
+            if (index < 0 || index >= this.totalSlides) return;
+            
+            document.querySelectorAll('.ob-slide')[this.currentSlide].classList.remove('active');
+            document.querySelectorAll('.ob-dot')[this.currentSlide].classList.remove('active');
+            
+            this.currentSlide = index;
+            
+            document.querySelectorAll('.ob-slide')[this.currentSlide].classList.add('active');
+            document.querySelectorAll('.ob-dot')[this.currentSlide].classList.add('active');
+            
+            document.getElementById('ob-prev-btn').style.visibility = this.currentSlide === 0 ? 'hidden' : 'visible';
+            document.getElementById('ob-next-btn').style.display = this.currentSlide === this.totalSlides - 1 ? 'none' : 'flex';
+        },
+        
+        complete() {
+            localStorage.setItem('ascent_onboarding_complete', 'true');
+            document.getElementById('onboarding').classList.add('hidden');
+            document.getElementById('main-app').classList.add('active');
+            App.init();
+        },
+        
+        attachEvents() {
+            document.getElementById('ob-prev-btn').addEventListener('click', () => this.goToSlide(this.currentSlide - 1));
+            document.getElementById('ob-next-btn').addEventListener('click', () => this.goToSlide(this.currentSlide + 1));
+            document.getElementById('ob-skip-btn').addEventListener('click', () => this.complete());
+            document.getElementById('ob-start-btn').addEventListener('click', () => this.complete());
+            
+            document.querySelectorAll('.ob-dot').forEach((dot, index) => {
+                dot.addEventListener('click', () => this.goToSlide(index));
+            });
+            
+            // Swipe support
+            let touchStartX = 0;
+            document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+            document.addEventListener('touchend', e => {
+                const diff = touchStartX - e.changedTouches[0].screenX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0) this.goToSlide(this.currentSlide + 1);
+                    else this.goToSlide(this.currentSlide - 1);
+                }
+            });
+            
+            // Keyboard
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowRight') this.goToSlide(this.currentSlide + 1);
+                if (e.key === 'ArrowLeft') this.goToSlide(this.currentSlide - 1);
+            });
+        }
+    };
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // MAIN APP (Same as before)
+    // ═══════════════════════════════════════════════════════════════════════
+    const Icons = {
+        mountain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3l4 8 5-5 5 14H2L8 3z"/></svg>',
+        target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+        check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
+        plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+        x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+        chevronLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>',
+        chevronRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
+        clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        flame: '<svg viewBox="0 0 24 24" fill="none" stroke-width="0"><defs><linearGradient id="flameGrad" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" style="stop-color:#f59e0b"/><stop offset="100%" style="stop-color:#ef4444"/></linearGradient></defs><path fill="url(#flameGrad)" d="M12 2C8.5 6 4 10 4 14a8 8 0 0016 0c0-4-4.5-8-8-12zm0 18a6 6 0 01-6-6c0-3 3-6 6-9 3 3 6 6 6 9a6 6 0 01-6 6z"/><path fill="#fbbf24" d="M12 20a4 4 0 01-4-4c0-2 2-4 4-6 2 2 4 4 4 6a4 4 0 01-4 4z"/></svg>',
+        zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
+        calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+        award: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>'
+    };
+    
+    const MILESTONES = [
+        { day: 1, name: 'Base Camp', icon: '🏕️', message: 'The journey begins!' },
+        { day: 7, name: 'Camp 1', icon: '⛺', message: 'First week complete!' },
+        { day: 14, name: 'Camp 2', icon: '🏔️', message: 'Two weeks strong!' },
+        { day: 30, name: 'Camp 3', icon: '🎯', message: 'One month! The habit is forming.' },
+        { day: 45, name: 'Camp 4', icon: '⭐', message: 'Almost there!' },
+        { day: 60, name: 'Summit', icon: '🏆', message: 'AUTOPILOT ACHIEVED!' }
+    ];
+    
+    const AscentAI = {
+        async generateCurriculum(params) { await new Promise(r => setTimeout(r, 1500)); return { title: "Your 8-Week Journey", totalWeeks: 8, phases: [{ name: "Foundation", weeks: [{ week: 1, milestone: "Learn fundamentals." }, { week: 2, milestone: "Practice basics daily." }]}, { name: "Building", weeks: [{ week: 3, milestone: "First small project." }, { week: 4, milestone: "Fix gaps." }]}, { name: "Application", weeks: [{ week: 5, milestone: "Real-world scenario." }, { week: 6, milestone: "Get feedback." }]}, { name: "Mastery", weeks: [{ week: 7, milestone: "Challenging project." }, { week: 8, milestone: "Demonstrate skills." }]}]}; },
+        async generateDailyTasks(params) { await new Promise(r => setTimeout(r, 1000)); return { tasks: [{ day: 1, task: "Review and set focus." }, { day: 2, task: "Practice 30 minutes." }, { day: 3, task: "Small challenge." }, { day: 4, task: "Review weak areas." }, { day: 5, task: "Mini-project." }, { day: 6, task: "Rest and review." }, { day: 7, task: "Plan next week." }]}; },
+        async generateTwoMinute(params) { await new Promise(r => setTimeout(r, 500)); return { twoMinuteVersion: `Just do the first step of "${params.task}".`, whyThisWorks: "Starting is the hardest part." }; },
+        async generateTwoMinuteHabit(params) { await new Promise(r => setTimeout(r, 500)); return { twoMinuteVersion: `Do just 2 minutes of ${params.habitName}.`, whyThisWorks: "Showing up matters more than duration." }; }
+    };
+    
+    const Particles = {
+        explode(x, y, colors = ['#22c55e', '#fbbf24', '#3b82f6']) {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const angle = (i / 12) * Math.PI * 2, dist = 40 + Math.random() * 30;
+                p.style.cssText = `left:${x}px;top:${y}px;background:${colors[i % colors.length]};--tx:${Math.cos(angle) * dist}px;--ty:${Math.sin(angle) * dist}px;`;
+                container.appendChild(p);
+                setTimeout(() => p.remove(), 600);
+            }
+        },
+        confetti() {
+            const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.cssText = `left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${2+Math.random()*2}s;`;
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 4000);
+                }, i * 30);
+            }
+        }
+    };
+    
+    const App = {
+        state: { screen: 'splash', activeTab: 'today', generating: false, twoMinOpen: {}, twoMinLoading: {}, showMilestone: null },
+        data: { name: '', goal: '', goalContext: '', currentLevel: 'beginner', weeksAvailable: 8, curriculum: null, currentWeek: 1, dailyTasks: [], habits: [], completions: [], taskCompletions: [], streakDays: 0, unlockedMilestones: [] },
+        
+        init() {
+            this.loadData();
+            this.render();
+            if (this.state.screen === 'splash') setTimeout(() => { this.state.screen = this.data.curriculum ? 'app' : 'setup-goal'; this.render(); }, 1500);
+        },
+        loadData() { const s = localStorage.getItem('ascent_v9'); if (s) this.data = { ...this.data, ...JSON.parse(s) }; },
+        saveData() { localStorage.setItem('ascent_v9', JSON.stringify(this.data)); },
+        render() { document.getElementById('app').innerHTML = this.getScreen(); this.attachEvents(); },
+        
+        getScreen() {
+            switch(this.state.screen) {
+                case 'splash': return this.splashScreen();
+                case 'setup-goal': return this.setupGoalScreen();
+                case 'setup-context': return this.setupContextScreen();
+                case 'setup-curriculum': return this.setupCurriculumScreen();
+                case 'setup-habits': return this.setupHabitsScreen();
+                case 'weekly-plan': return this.weeklyPlanScreen();
+                case 'app': return this.appScreen();
+                default: return this.splashScreen();
+            }
+        },
+        
+        splashScreen() { return `<div class="screen active" id="splash"><div class="splash-icon">${Icons.mountain}</div><div class="splash-title">Ascent</div><div class="splash-sub">Structure your goals</div></div>`; },
+        
+        setupGoalScreen() { return `<div class="screen active"><div class="setup"><div class="setup-header"><div class="setup-progress"><div class="setup-progress-bar"><div class="setup-progress-fill" style="width:25%"></div></div></div><h1 class="setup-title">What do you want to achieve?</h1><p class="setup-subtitle">Not a habit—a destination.</p></div><div class="setup-content"><div class="form-group"><label class="form-label">Your Goal</label><textarea class="input textarea" id="goal-input" placeholder="e.g., Become conversational in Spanish">${this.data.goal}</textarea></div><div class="form-group"><label class="form-label">Current Level</label><div class="chip-group"><div class="chip ${this.data.currentLevel==='beginner'?'selected':''}" data-level="beginner">Beginner</div><div class="chip ${this.data.currentLevel==='intermediate'?'selected':''}" data-level="intermediate">Intermediate</div><div class="chip ${this.data.currentLevel==='advanced'?'selected':''}" data-level="advanced">Advanced</div></div></div><div class="form-group"><label class="form-label">Timeframe</label><div class="chip-group"><div class="chip ${this.data.weeksAvailable===4?'selected':''}" data-weeks="4">4 weeks</div><div class="chip ${this.data.weeksAvailable===8?'selected':''}" data-weeks="8">8 weeks</div><div class="chip ${this.data.weeksAvailable===12?'selected':''}" data-weeks="12">12 weeks</div></div></div></div><div class="setup-footer"><button class="btn btn-primary btn-full" id="goal-next">Continue</button></div></div></div>`; },
+        
+        setupContextScreen() { return `<div class="screen active"><div class="setup"><div class="setup-header"><button class="setup-back" id="context-back">${Icons.chevronLeft} Back</button><div class="setup-progress"><div class="setup-progress-bar"><div class="setup-progress-fill" style="width:50%"></div></div></div><h1 class="setup-title">Any context?</h1><p class="setup-subtitle">Helps personalize your curriculum.</p></div><div class="setup-content"><div class="form-group"><label class="form-label">Context (Optional)</label><textarea class="input textarea" id="context-input" placeholder="e.g., I have 30 minutes in the morning...">${this.data.goalContext}</textarea></div><div class="form-group"><label class="form-label">Best Time</label><div class="time-chips"><div class="time-chip selected" data-time="morning"><div class="time-chip-label">Morning</div></div><div class="time-chip" data-time="afternoon"><div class="time-chip-label">Afternoon</div></div><div class="time-chip" data-time="evening"><div class="time-chip-label">Evening</div></div></div></div></div><div class="setup-footer"><button class="btn btn-primary btn-full" id="context-next">Generate Curriculum</button></div></div></div>`; },
+        
+        setupCurriculumScreen() { const c = this.data.curriculum; return `<div class="screen active"><div class="setup"><div class="setup-header"><button class="setup-back" id="curriculum-back">${Icons.chevronLeft} Back</button><div class="setup-progress"><div class="setup-progress-bar"><div class="setup-progress-fill" style="width:75%"></div></div></div><h1 class="setup-title">${this.state.generating?'Building...':'Your Curriculum'}</h1></div><div class="setup-content">${this.state.generating?`<div class="loading-card"><div class="loading-spinner"></div><div class="loading-text">Generating...</div></div>`:c?`<div class="curriculum-card"><div class="curriculum-header"><div class="curriculum-icon">${Icons.award}</div><div><div class="curriculum-title">${c.title}</div><div class="curriculum-meta">${c.totalWeeks} weeks · ${c.phases.length} phases</div></div></div>${c.phases.map(p=>`<div class="phase"><div class="phase-header"><div class="phase-dot"></div><div class="phase-name">${p.name}</div></div><div class="phase-weeks">${p.weeks.map(w=>`<div class="week-item"><div class="week-num">Week ${w.week}</div><div class="week-milestone">${w.milestone}</div></div>`).join('')}</div></div>`).join('')}</div>`:''}</div><div class="setup-footer"><button class="btn btn-primary btn-full" id="curriculum-next" ${this.state.generating?'disabled':''}>${this.state.generating?'Generating...':'Continue'}</button></div></div></div>`; },
+        
+        setupHabitsScreen() { return `<div class="screen active"><div class="setup"><div class="setup-header"><button class="setup-back" id="habits-back">${Icons.chevronLeft} Back</button><div class="setup-progress"><div class="setup-progress-bar"><div class="setup-progress-fill" style="width:100%"></div></div></div><h1 class="setup-title">Add daily habits</h1></div><div class="setup-content">${this.data.habits.map((h,i)=>`<div class="habit-card"><div class="habit-row"><div class="habit-info"><div class="habit-name">${h.name}</div><div class="habit-meta">${h.goalAmount} ${h.unit}</div></div><button class="btn btn-ghost btn-sm" data-remove-habit="${i}">${Icons.x}</button></div></div>`).join('')}<div class="form-group" style="margin-top:20px;"><label class="form-label">Add Habit</label><input type="text" class="input" id="habit-name-input" placeholder="e.g., Exercise, Read"></div><div style="display:flex;gap:12px;"><div class="form-group" style="flex:1;"><label class="form-label">Amount</label><input type="number" class="input" id="habit-amount-input" value="30"></div><div class="form-group" style="flex:1;"><label class="form-label">Unit</label><select class="input" id="habit-unit-input"><option value="minutes">minutes</option><option value="times">times</option><option value="pages">pages</option></select></div></div><button class="btn btn-light btn-full" id="add-habit-btn">${Icons.plus} Add</button></div><div class="setup-footer"><button class="btn btn-primary btn-full" id="habits-done">Start Journey</button></div></div></div>`; },
+        
+        weeklyPlanScreen() { const c = this.data.curriculum, cw = this.data.currentWeek; let wm = "Complete this week's tasks"; if(c) for(const p of c.phases){ const w=p.weeks.find(w=>w.week===cw); if(w){wm=w.milestone;break;}} const tasks = this.data.dailyTasks, dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], td=new Date().getDay(); return `<div class="screen active"><div class="setup"><div class="setup-header"><button class="setup-back" id="plan-back">${Icons.chevronLeft} Back</button><h1 class="setup-title">Week ${cw} Plan</h1><p class="setup-subtitle">${wm}</p></div><div class="setup-content">${this.state.generating?`<div class="loading-card"><div class="loading-spinner"></div><div class="loading-text">Breaking down...</div></div>`:`<div class="plan-card"><div class="plan-header"><div class="plan-icon">${Icons.calendar}</div><div><div class="plan-title">Daily Tasks</div><div class="plan-meta">${tasks.length} tasks</div></div></div>${tasks.map((t,i)=>{const it=i===td,done=this.data.taskCompletions.includes(`week${cw}-day${t.day}`);return`<div class="day-task"><div class="day-num ${it?'today':''} ${done?'done':''}">${t.day}</div><div class="day-content"><div class="day-label">${dn[i]||'Day '+t.day}</div><div class="day-text">${t.task}</div></div></div>`;}).join('')}</div>`}</div><div class="setup-footer"><button class="btn btn-primary btn-full" id="plan-done" ${this.state.generating?'disabled':''}>Go to Today</button></div></div></div>`; },
+        
+        appScreen() { const tab = this.state.activeTab; let content = ''; if(tab==='today') content = this.todayTab(); else if(tab==='plan') content = this.planTab(); else content = this.profileTab(); const hour = new Date().getHours(), greeting = hour<12?'Good morning':hour<17?'Good afternoon':'Good evening'; const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'}); return `<div class="screen active"><div class="app"><div class="app-header"><div class="header-row"><div><div class="header-greeting">${greeting}</div><div class="header-date">${dateStr}</div></div><div class="header-avatar">${(this.data.name||'U')[0].toUpperCase()}</div></div></div><div class="app-content">${content}</div><div class="tab-bar"><button class="tab-item ${tab==='today'?'active':''}" data-tab="today">${Icons.clock}<span class="tab-label">Today</span></button><button class="tab-item ${tab==='plan'?'active':''}" data-tab="plan">${Icons.calendar}<span class="tab-label">Plan</span></button><button class="tab-item ${tab==='profile'?'active':''}" data-tab="profile">${Icons.user}<span class="tab-label">You</span></button></div></div>${this.celebrationOverlay()}${this.milestoneModal()}</div>`; },
+        
+        todayTab() { const today = new Date(), todayStr = today.toDateString(), streak = this.data.streakDays; const todayHabitsDone = new Set(this.data.completions.filter(c=>new Date(c.date).toDateString()===todayStr&&c.completed).map(c=>c.odHabitId)).size; const todayTaskDone = this.data.taskCompletions.some(t=>t.includes(`week${this.data.currentWeek}-day${today.getDay()}`)); const totalItems = this.data.habits.length + (this.data.dailyTasks.length>0?1:0); const completedItems = todayHabitsDone + (todayTaskDone?1:0); const dayProgress = totalItems>0?Math.round((completedItems/totalItems)*100):0; const ringComplete = dayProgress===100; const circumference = 2*Math.PI*52; const ringOffset = circumference - (dayProgress/100)*circumference; let flameSize = 'small'; if(streak>=7) flameSize = 'medium'; if(streak>=14) flameSize = 'large'; if(streak>=30) flameSize = 'epic'; let streakMsg = 'Light the flame!'; if(streak>=1) streakMsg = 'Keep it burning!'; if(streak>=7) streakMsg = 'One week strong!'; if(streak>=14) streakMsg = 'Two weeks! 🔥'; if(streak>=30) streakMsg = 'On fire!'; if(streak>=60) streakMsg = 'LEGENDARY!'; const c = this.data.curriculum, cw = this.data.currentWeek; let wm = "Complete your tasks"; if(c) for(const p of c.phases){ const w=p.weeks.find(w=>w.week===cw); if(w){wm=w.milestone;break;}} const todayTask = this.data.dailyTasks[today.getDay()]; const todayTaskId = `week${cw}-day${today.getDay()}`; const taskDone = this.data.taskCompletions.includes(todayTaskId); const twoMinOpen = this.state.twoMinOpen[todayTaskId]; const twoMinLoading = this.state.twoMinLoading[todayTaskId]; return `<div class="daily-ring-container"><div class="daily-ring ${ringComplete?'complete':''}"><svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="52"/><circle class="ring-progress" cx="60" cy="60" r="52" stroke-dasharray="${circumference}" stroke-dashoffset="${ringOffset}"/></svg><div class="daily-ring-center"><div class="daily-ring-percent">${dayProgress}%</div><div class="daily-ring-label">Today</div></div></div><div class="daily-ring-info"><div class="daily-ring-title">${ringComplete?'🎉 Ring Closed!':'Close Your Ring'}</div><div class="daily-ring-subtitle">${ringComplete?'Amazing work today!':'Complete all tasks & habits'}</div><div class="daily-ring-stats"><div class="daily-ring-stat"><strong>${completedItems}</strong>/${totalItems} done</div></div></div></div><div class="streak-card"><div class="streak-flame-container"><div class="streak-flame ${flameSize}">${Icons.flame}</div><div class="flame-particles"><div class="flame-particle"></div><div class="flame-particle"></div><div class="flame-particle"></div></div></div><div class="streak-info"><div class="streak-number">${streak}</div><div class="streak-label">day streak</div><div class="streak-message">${streakMsg}</div></div></div>${this.renderMountain()}${this.renderHeatmap()}<div class="week-info"><div class="week-info-header"><span class="week-info-label">This Week</span><span class="week-info-num">Week ${cw}</span></div><div class="week-milestone-text">${wm}</div></div><div class="section-header"><span class="section-title">Today's Task</span><span class="section-action" id="view-plan">View Plan ${Icons.chevronRight}</span></div>${todayTask?`<div class="task-card ${taskDone?'completed':''}"><div class="task-header"><div class="task-check ${taskDone?'done':''}" data-complete-task="${todayTaskId}">${Icons.check}</div><div class="task-content"><div class="task-text">${todayTask.task}</div><div class="task-meta"><span class="task-tag ai">AI Generated</span></div></div></div>${!taskDone?`<div class="task-actions"><button class="task-btn cant-start" data-2min-task="${todayTaskId}" data-task="${todayTask.task}" ${twoMinLoading?'disabled':''}>${twoMinLoading?'<span class="mini-spinner"></span>':Icons.zap} Can't Start</button></div>${twoMinOpen?`<div class="two-min-popup"><div class="two-min-badge">${Icons.zap} 2-Minute Version</div><div class="two-min-text">${twoMinOpen.twoMinuteVersion}</div><div class="two-min-why">${twoMinOpen.whyThisWorks}</div><div class="two-min-actions"><button class="task-btn primary" data-complete-task="${todayTaskId}">Did It</button><button class="task-btn" data-close-2min="${todayTaskId}">Dismiss</button></div></div>`:''}`:''}}</div>`:''}<div class="section-header" style="margin-top:20px;"><span class="section-title">Daily Habits</span></div>${this.data.habits.length===0?`<p style="text-align:center;color:var(--text3);padding:20px;">No habits yet</p>`:this.data.habits.map(h=>{const isDone = this.data.completions.some(c=>c.odHabitId===h.id&&new Date(c.date).toDateString()===todayStr&&c.completed);const hStreak = this.getHabitStreak(h.id);const h2m = this.state.twoMinOpen[h.id], h2ml = this.state.twoMinLoading[h.id];return `<div class="habit-card ${isDone?'completed':''}"><div class="habit-row"><div class="habit-check ${isDone?'done':''}" data-complete-habit="${h.id}">${Icons.check}</div><div class="habit-info"><div class="habit-name">${h.name}</div><div class="habit-meta">${h.goalAmount} ${h.unit}</div></div>${hStreak>0?`<div class="habit-streak">${Icons.flame} ${hStreak}</div>`:''} ${!isDone?`<button class="habit-2min" data-2min-habit="${h.id}" data-habit-name="${h.name}" data-habit-amount="${h.goalAmount}" data-habit-unit="${h.unit}" ${h2ml?'disabled':''}>${h2ml?'...':Icons.zap}</button>`:''}</div>${h2m?`<div class="two-min-popup" style="margin-top:12px;"><div class="two-min-badge">${Icons.zap} 2-Minute Version</div><div class="two-min-text">${h2m.twoMinuteVersion}</div><div class="two-min-why">${h2m.whyThisWorks}</div><div class="two-min-actions"><button class="task-btn primary" data-complete-habit="${h.id}">Did It</button><button class="task-btn" data-close-2min="${h.id}">Dismiss</button></div></div>`:''}</div>`;}).join('')}<button class="add-btn" id="add-habit-main">${Icons.plus} Add Habit</button>`; },
+        
+        renderHeatmap() { const today = new Date(), year = today.getFullYear(), month = today.getMonth(); const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month+1, 0).getDate(); let cells = ''; for(let i=0;i<firstDay;i++) cells += '<div class="heatmap-cell empty"></div>'; for(let day=1;day<=daysInMonth;day++){const d = new Date(year,month,day);const isToday = d.toDateString()===today.toDateString();const isFuture = d > today;const dayCompletions = this.data.completions.filter(c=>new Date(c.date).toDateString()===d.toDateString()&&c.completed);const total = this.data.habits.length||1;const done = new Set(dayCompletions.map(c=>c.odHabitId)).size;const pct = Math.round((done/total)*100);let level = 0;if(pct>0) level=1; if(pct>=50) level=2; if(pct>=75) level=3; if(pct>=100) level=4;const tooltip = `${monthNames[month]} ${day}: ${done}/${total} (${pct}%)`;cells += `<div class="heatmap-cell ${isFuture?'future':'level-'+level} ${isToday?'today':''}">${!isFuture?`<div class="heatmap-tooltip">${tooltip}</div>`:''}</div>`;} return `<div class="heatmap-card"><div class="heatmap-header"><div class="heatmap-title">${monthNames[month]} ${year}</div><div class="heatmap-legend"><span>Less</span><div class="heatmap-legend-box" style="background:var(--heatmap-0)"></div><div class="heatmap-legend-box" style="background:var(--heatmap-25)"></div><div class="heatmap-legend-box" style="background:var(--heatmap-50)"></div><div class="heatmap-legend-box" style="background:var(--heatmap-75)"></div><div class="heatmap-legend-box" style="background:var(--heatmap-100)"></div><span>More</span></div></div><div class="heatmap-days-header"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div><div class="heatmap-grid">${cells}</div></div>`; },
+        
+        renderMountain() { const streak = this.data.streakDays, maxDay = 60, pct = Math.min(streak/maxDay, 1); const camps = MILESTONES.map((m,i) => ({...m, unlocked: streak >= m.day, current: streak >= m.day && (i===MILESTONES.length-1 || streak < MILESTONES[i+1].day)})); const pathPoints = [[20,160],[50,140],[80,130],[120,105],[160,85],[200,60],[240,40],[280,25]]; const climberPos = Math.floor(pct * (pathPoints.length-1)); const climberPt = pathPoints[Math.min(climberPos, pathPoints.length-1)]; return `<div class="mountain-card"><div class="mountain-header"><div class="mountain-title">🏔️ Your Ascent</div><div class="mountain-progress-text">Day ${streak} of ${maxDay}</div></div><div class="mountain-visual"><svg class="mountain-svg" viewBox="0 0 300 180"><defs><linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#bfdbfe"/><stop offset="100%" style="stop-color:#e0f2fe"/></linearGradient><linearGradient id="mtGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#64748b"/><stop offset="40%" style="stop-color:#94a3b8"/><stop offset="100%" style="stop-color:#cbd5e1"/></linearGradient></defs><rect fill="url(#skyGrad)" width="300" height="180"/><polygon fill="url(#mtGrad)" points="0,180 60,100 100,130 150,20 200,80 250,50 300,100 300,180"/><polygon fill="#f1f5f9" points="140,35 150,20 160,35"/><path class="mountain-path" d="M20,160 Q50,140 80,130 T120,105 T160,85 T200,60 T240,40 L280,25"/><path class="mountain-path-walked" d="M20,160 ${pathPoints.slice(0,climberPos+1).map((p,i)=>i===0?`Q${p[0]},${p[1]}`:`T${p[0]},${p[1]}`).join(' ')}"/>${camps.map((c,i)=>{const pt=pathPoints[Math.min(i+1,pathPoints.length-1)];return`<g class="camp-marker ${c.unlocked?'unlocked':''} ${c.current?'current':''}" transform="translate(${pt[0]},${pt[1]})"><circle r="8" fill="${c.unlocked?'#22c55e':'#e2e8f0'}" stroke="#fff" stroke-width="2"/><text y="20" text-anchor="middle">${c.name}</text></g>`;}).join('')}<g class="climber-icon" transform="translate(${climberPt[0]},${climberPt[1]-15})"><circle r="6" fill="#3b82f6" stroke="#fff" stroke-width="2"/><text y="-10" text-anchor="middle" font-size="10">🧗</text></g></svg></div><div class="mountain-legend">${camps.slice(0,5).map(c=>`<div class="mountain-camp ${c.unlocked?'unlocked':''} ${c.current?'current':''}"><div class="mountain-camp-icon ${c.unlocked?'unlocked':''} ${c.current?'current':'locked'}">${c.icon}</div><div class="mountain-camp-name">${c.name}</div><div class="mountain-camp-day">Day ${c.day}</div></div>`).join('')}</div></div>`; },
+        
+        planTab() { const c = this.data.curriculum; if(!c) return '<p style="text-align:center;color:var(--text3);padding:40px;">No curriculum yet.</p>'; return `<div class="curriculum-card"><div class="curriculum-header"><div class="curriculum-icon">${Icons.award}</div><div><div class="curriculum-title">${c.title}</div><div class="curriculum-meta">Week ${this.data.currentWeek} of ${c.totalWeeks}</div></div></div>${c.phases.map(p=>`<div class="phase"><div class="phase-header"><div class="phase-dot"></div><div class="phase-name">${p.name}</div></div><div class="phase-weeks">${p.weeks.map(w=>`<div class="week-item" style="${w.week===this.data.currentWeek?'background:var(--accent-light);margin:-10px -12px;padding:10px 12px;border-radius:8px;':''}"><div class="week-num" style="${w.week===this.data.currentWeek?'color:var(--accent);':''}">Week ${w.week} ${w.week===this.data.currentWeek?'← Current':''}</div><div class="week-milestone">${w.milestone}</div></div>`).join('')}</div></div>`).join('')}</div><button class="btn btn-primary btn-full" id="view-week-plan">View This Week</button>`; },
+        
+        profileTab() { const badges = MILESTONES.filter(m=>this.data.streakDays>=m.day); return `<div style="text-align:center;padding:32px 0;"><div class="header-avatar" style="width:80px;height:80px;font-size:32px;margin:0 auto 16px;">${(this.data.name||'U')[0].toUpperCase()}</div><div style="font-size:24px;font-weight:700;">${this.data.name||'Climber'}</div><div style="color:var(--text3);margin-top:4px;">Week ${this.data.currentWeek}</div></div><div class="plan-card"><div class="plan-header"><div class="plan-icon" style="background:var(--success-light);">${Icons.flame}</div><div><div class="plan-title">${this.data.streakDays} Day Streak</div><div class="plan-meta">${60-this.data.streakDays} to autopilot</div></div></div></div><div class="section-header"><span class="section-title">Badges Earned</span></div><div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">${badges.map(b=>`<div style="text-align:center;padding:12px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);"><div style="font-size:24px;">${b.icon}</div><div style="font-size:11px;font-weight:600;color:var(--text3);margin-top:4px;">${b.name}</div></div>`).join('')}</div><button class="btn btn-light btn-full" id="reset-data" style="margin-top:16px;color:var(--danger);">Reset All Data</button>`; },
+        
+        celebrationOverlay() { return `<div class="celebration" id="celebration"><div class="celebration-icon">${Icons.check}</div><div class="celebration-title">Done!</div><div class="celebration-sub">Keep the momentum</div></div>`; },
+        milestoneModal() { const m = this.state.showMilestone; if(!m) return ''; return `<div class="milestone-modal active" id="milestone-modal"><div class="milestone-content"><div class="milestone-badge" style="font-size:60px;">${m.icon}</div><div class="milestone-title">${m.name} Reached!</div><div class="milestone-subtitle">${m.message}</div><button class="btn btn-primary milestone-btn" id="close-milestone">Continue</button></div></div>`; },
+        getHabitStreak(habitId) { const today = new Date(); let streak = 0; for(let i=0;i<365;i++){const d = new Date(today); d.setDate(today.getDate()-i);const done = this.data.completions.some(c=>c.odHabitId===habitId&&new Date(c.date).toDateString()===d.toDateString()&&c.completed);if(i===0&&!done) continue;if(done) streak++; else break;} return streak; },
+        checkMilestones() { const streak = this.data.streakDays; for(const m of MILESTONES) { if(streak>=m.day && !this.data.unlockedMilestones.includes(m.day)) { this.data.unlockedMilestones.push(m.day); this.state.showMilestone = m; this.saveData(); Particles.confetti(); break; } } },
+        
+        async generateCurriculum() { this.state.generating = true; this.render(); const result = await AscentAI.generateCurriculum({goal:this.data.goal,weeksAvailable:this.data.weeksAvailable,currentLevel:this.data.currentLevel,context:this.data.goalContext}); this.data.curriculum = result; this.state.generating = false; this.saveData(); this.render(); },
+        async generateDailyTasks() { this.state.generating = true; this.render(); let wm = "Complete goals"; if(this.data.curriculum) for(const p of this.data.curriculum.phases){ const w=p.weeks.find(w=>w.week===this.data.currentWeek); if(w){wm=w.milestone;break;}} const result = await AscentAI.generateDailyTasks({milestone:wm,daysAvailable:7,goalContext:this.data.goal}); this.data.dailyTasks = result.tasks; this.state.generating = false; this.saveData(); this.render(); },
+        async generate2MinTask(taskId, taskText) { this.state.twoMinLoading[taskId] = true; this.render(); const result = await AscentAI.generateTwoMinute({task:taskText}); this.state.twoMinLoading[taskId] = false; this.state.twoMinOpen[taskId] = result; this.render(); },
+        async generate2MinHabit(habitId, habitName, goalAmount, unit) { this.state.twoMinLoading[habitId] = true; this.render(); const result = await AscentAI.generateTwoMinuteHabit({habitName,goalAmount,unit}); this.state.twoMinLoading[habitId] = false; this.state.twoMinOpen[habitId] = result; this.render(); },
+        
+        completeTask(taskId, el) { if(!this.data.taskCompletions.includes(taskId)) { this.data.taskCompletions.push(taskId); this.data.streakDays = Math.max(this.data.streakDays, 1); delete this.state.twoMinOpen[taskId]; if(el) { const rect = el.getBoundingClientRect(); Particles.explode(rect.left+13, rect.top+13); } this.checkMilestones(); this.saveData(); this.showCelebration(); } },
+        completeHabit(habitId, el) { const today = new Date().toISOString(); if(!this.data.completions.find(c=>c.odHabitId===habitId&&new Date(c.date).toDateString()===new Date().toDateString())) { this.data.completions.push({odHabitId:habitId,date:today,completed:true}); this.data.streakDays = Math.max(this.data.streakDays, 1); delete this.state.twoMinOpen[habitId]; if(el) { const rect = el.getBoundingClientRect(); Particles.explode(rect.left+12, rect.top+12); } this.checkMilestones(); this.saveData(); this.showCelebration(); } },
+        showCelebration() { const el = document.getElementById('celebration'); if(el) { el.classList.add('active'); setTimeout(()=>{el.classList.remove('active');this.render();},1500); } },
+        
+        attachEvents() {
+            document.getElementById('goal-next')?.addEventListener('click',()=>{const g=document.getElementById('goal-input')?.value.trim();if(g){this.data.goal=g;this.state.screen='setup-context';this.render();}});
+            document.querySelectorAll('[data-level]').forEach(el=>el.addEventListener('click',()=>{this.data.currentLevel=el.dataset.level;this.render();}));
+            document.querySelectorAll('[data-weeks]').forEach(el=>el.addEventListener('click',()=>{this.data.weeksAvailable=parseInt(el.dataset.weeks);this.render();}));
+            document.getElementById('context-back')?.addEventListener('click',()=>{this.state.screen='setup-goal';this.render();});
+            document.getElementById('context-next')?.addEventListener('click',()=>{this.data.goalContext=document.getElementById('context-input')?.value||'';this.state.screen='setup-curriculum';this.generateCurriculum();});
+            document.querySelectorAll('.time-chip').forEach(el=>el.addEventListener('click',()=>{document.querySelectorAll('.time-chip').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');}));
+            document.getElementById('curriculum-back')?.addEventListener('click',()=>{this.state.screen='setup-context';this.render();});
+            document.getElementById('curriculum-next')?.addEventListener('click',()=>{if(this.data.curriculum){this.state.screen='setup-habits';this.render();}});
+            document.getElementById('habits-back')?.addEventListener('click',()=>{this.state.screen='setup-curriculum';this.render();});
+            document.getElementById('add-habit-btn')?.addEventListener('click',()=>{const n=document.getElementById('habit-name-input')?.value.trim(),a=parseInt(document.getElementById('habit-amount-input')?.value)||30,u=document.getElementById('habit-unit-input')?.value||'minutes';if(n){this.data.habits.push({id:Date.now().toString(),name:n,goalAmount:a,unit:u});document.getElementById('habit-name-input').value='';this.render();}});
+            document.querySelectorAll('[data-remove-habit]').forEach(el=>el.addEventListener('click',()=>{this.data.habits.splice(parseInt(el.dataset.removeHabit),1);this.render();}));
+            document.getElementById('habits-done')?.addEventListener('click',()=>{this.data.streakDays=1;this.data.unlockedMilestones=[1];this.saveData();this.state.screen='weekly-plan';this.generateDailyTasks();});
+            document.getElementById('plan-back')?.addEventListener('click',()=>{this.state.screen='app';this.render();});
+            document.getElementById('plan-done')?.addEventListener('click',()=>{this.state.screen='app';this.render();});
+            document.querySelectorAll('.tab-item').forEach(t=>t.addEventListener('click',()=>{this.state.activeTab=t.dataset.tab;this.render();}));
+            document.getElementById('view-plan')?.addEventListener('click',()=>{this.state.screen='weekly-plan';this.render();});
+            document.getElementById('view-week-plan')?.addEventListener('click',()=>{this.state.screen='weekly-plan';this.render();});
+            document.querySelectorAll('[data-complete-task]').forEach(el=>el.addEventListener('click',()=>this.completeTask(el.dataset.completeTask,el)));
+            document.querySelectorAll('[data-complete-habit]').forEach(el=>el.addEventListener('click',()=>this.completeHabit(el.dataset.completeHabit,el)));
+            document.querySelectorAll('[data-2min-task]').forEach(el=>el.addEventListener('click',()=>this.generate2MinTask(el.dataset['2minTask'],el.dataset.task)));
+            document.querySelectorAll('[data-2min-habit]').forEach(el=>el.addEventListener('click',()=>this.generate2MinHabit(el.dataset['2minHabit'],el.dataset.habitName,el.dataset.habitAmount,el.dataset.habitUnit)));
+            document.querySelectorAll('[data-close-2min]').forEach(el=>el.addEventListener('click',()=>{delete this.state.twoMinOpen[el.dataset.close2min];this.render();}));
+            document.getElementById('add-habit-main')?.addEventListener('click',()=>{const n=prompt('Habit name:');if(n){this.data.habits.push({id:Date.now().toString(),name:n,goalAmount:30,unit:'minutes'});this.saveData();this.render();}});
+            document.getElementById('close-milestone')?.addEventListener('click',()=>{this.state.showMilestone=null;this.render();});
+            document.getElementById('reset-data')?.addEventListener('click',()=>{if(confirm('Reset?')){localStorage.removeItem('ascent_v9');localStorage.removeItem('ascent_onboarding_complete');location.reload();}});
+        }
+    };
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════════════
+    Onboarding.init();
+    </script>
+</body>
+</html>
