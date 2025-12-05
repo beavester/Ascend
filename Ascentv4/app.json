@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ascent.app",
+      "bundleIdentifier": "com.michaelbeaver.ascent",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -26,7 +26,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#3b82f6"
       },
-      "package": "com.ascent.app"
+      "package": "com.michaelbeaver.ascent"
     },
     "web": {
       "favicon": "./assets/favicon.png"
