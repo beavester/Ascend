@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Ascent",
+    "slug": "ascent-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ascent.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#3b82f6"
+      },
+      "package": "com.ascent.app"
+    }
+  }
+}W
