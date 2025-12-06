@@ -13,7 +13,7 @@ import Svg, {
   Text as SvgText 
 } from 'react-native-svg';
 import { Info } from 'lucide-react-native';
-import { colors, borderRadius, shadows } from '../constants/theme';
+import { lightColors as colors, radius as borderRadius, shadows } from '../constants/theme';
 import { MILESTONES, MAX_STREAK_DAYS } from '../constants/milestones';
 
 const MountainView = ({ streakDays, goal, onInfoPress }) => {

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react-native';
-import { colors, borderRadius, shadows, spacing } from '../constants/theme';
+import { lightColors as colors, radius as borderRadius, shadows, spacing } from '../constants/theme';
 import { useAppData } from '../hooks/useAppData';
 import { generateCurriculum, generateDailyTasks } from '../services/ai';
 

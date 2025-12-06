@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
-import { colors, borderRadius, shadows, spacing } from '../constants/theme';
+import { lightColors as colors, radius as borderRadius, shadows, spacing } from '../constants/theme';
 import { useAppData } from '../hooks/useAppData';
 import { generateTwoMinuteTask, generateTwoMinuteHabit } from '../services/ai';
 import MountainView from '../components/MountainView';

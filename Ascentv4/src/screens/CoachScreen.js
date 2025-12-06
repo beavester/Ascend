@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Send, Sparkles, Trash2 } from 'lucide-react-native';
-import { colors, borderRadius, shadows, spacing } from '../constants/theme';
+import { lightColors as colors, radius as borderRadius, shadows, spacing } from '../constants/theme';
 import { useAppData } from '../hooks/useAppData';
 import { chatWithCoach } from '../services/ai';
 import { COACH_SUGGESTIONS } from '../constants/milestones';

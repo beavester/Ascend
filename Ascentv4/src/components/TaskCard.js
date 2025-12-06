@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Check, Sparkles } from 'lucide-react-native';
-import { colors, borderRadius, shadows } from '../constants/theme';
+import { lightColors as colors, radius as borderRadius, shadows } from '../constants/theme';
 
 const TaskCard = ({
   task,
